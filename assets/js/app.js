@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initUpload();
     initHistory();
     initQR();
+    initAuthForms();
+    initUserDropdown();
 });
 
 /* ===== TOAST NOTIFICATIONS ===== */
@@ -498,3 +500,213 @@ window.resetCreateForm = resetCreateForm;
 window.shareFolderUrl = shareFolderUrl;
 window.toggleQR = toggleQR;
 window.removeFromHistory = removeFromHistory;
+window.togglePasswordVisibility = togglePasswordVisibility;
+
+/* ===== USER DROPDOWN ===== */
+function initUserDropdown() {
+    const avatarBtn = document.getElementById('nav-avatar-btn');
+    const dropdown = document.getElementById('nav-dropdown');
+    if (!avatarBtn || !dropdown) return;
+
+    avatarBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target) && !avatarBtn.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
+/* ===== AUTH FORMS ===== */
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.innerHTML = isPassword
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
+function initAuthForms() {
+    // Login
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login');
+            const errEl = document.getElementById('login-error');
+            setBtnLoading(btn, true);
+            errEl.style.display = 'none';
+
+            const formData = new FormData(loginForm);
+            formData.append('csrf_token', getCSRF());
+
+            try {
+                const res = await fetch('/api/auth/login', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.csrf_token) updateCSRF(data.csrf_token);
+                if (data.success) {
+                    showToast('Login successful! Redirecting...');
+                    setTimeout(() => window.location.href = '/dashboard', 800);
+                } else {
+                    errEl.textContent = data.errors?.[0] || 'Login failed.';
+                    errEl.style.display = 'flex';
+                }
+            } catch (err) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.style.display = 'flex';
+            } finally {
+                setBtnLoading(btn, false);
+            }
+        });
+    }
+
+    // Register
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-register');
+            const errEl = document.getElementById('register-error');
+            setBtnLoading(btn, true);
+            errEl.style.display = 'none';
+
+            const pass = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            if (pass !== confirm) {
+                errEl.textContent = 'Passwords do not match.';
+                errEl.style.display = 'flex';
+                setBtnLoading(btn, false);
+                return;
+            }
+
+            const formData = new FormData(registerForm);
+            formData.append('csrf_token', getCSRF());
+
+            try {
+                const res = await fetch('/api/auth/register', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.csrf_token) updateCSRF(data.csrf_token);
+                if (data.success) {
+                    showToast('Account created! Redirecting...');
+                    setTimeout(() => window.location.href = '/dashboard', 800);
+                } else {
+                    errEl.textContent = data.errors?.[0] || 'Registration failed.';
+                    errEl.style.display = 'flex';
+                }
+            } catch (err) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.style.display = 'flex';
+            } finally {
+                setBtnLoading(btn, false);
+            }
+        });
+    }
+
+    // Forgot Password
+    const forgotForm = document.getElementById('forgot-form');
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-forgot');
+            const errEl = document.getElementById('forgot-error');
+            const successEl = document.getElementById('forgot-success');
+            setBtnLoading(btn, true);
+            errEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const formData = new FormData(forgotForm);
+            formData.append('csrf_token', getCSRF());
+
+            try {
+                const res = await fetch('/api/auth/forgot-password', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.csrf_token) updateCSRF(data.csrf_token);
+                if (data.success) {
+                    let msg = data.message || 'Reset link sent.';
+                    if (data.reset_link) {
+                        msg += '<br><br><strong>Reset Link:</strong><br><a href="' + data.reset_link + '" style="word-break:break-all;color:var(--green-600)">' + data.reset_link + '</a>';
+                    }
+                    successEl.innerHTML = msg;
+                    successEl.style.display = 'block';
+                    showToast('Reset link generated!');
+                } else {
+                    errEl.textContent = data.errors?.[0] || 'Failed.';
+                    errEl.style.display = 'flex';
+                }
+            } catch (err) {
+                errEl.textContent = 'Network error.';
+                errEl.style.display = 'flex';
+            } finally {
+                setBtnLoading(btn, false);
+            }
+        });
+    }
+
+    // Reset Password
+    const resetForm = document.getElementById('reset-form');
+    if (resetForm) {
+        resetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-reset');
+            const errEl = document.getElementById('reset-error');
+            const successEl = document.getElementById('reset-success');
+            setBtnLoading(btn, true);
+            errEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            const pass = document.getElementById('reset-password').value;
+            const confirm = document.getElementById('reset-confirm').value;
+            if (pass !== confirm) {
+                errEl.textContent = 'Passwords do not match.';
+                errEl.style.display = 'flex';
+                setBtnLoading(btn, false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('token', document.getElementById('reset-token').value);
+            formData.append('password', pass);
+            formData.append('confirm_password', confirm);
+            formData.append('csrf_token', getCSRF());
+
+            try {
+                const res = await fetch('/api/auth/reset-password', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.csrf_token) updateCSRF(data.csrf_token);
+                if (data.success) {
+                    successEl.textContent = data.message || 'Password reset! Redirecting to login...';
+                    successEl.style.display = 'block';
+                    showToast('Password reset successfully!');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                } else {
+                    errEl.textContent = data.errors?.[0] || 'Reset failed.';
+                    errEl.style.display = 'flex';
+                }
+            } catch (err) {
+                errEl.textContent = 'Network error.';
+                errEl.style.display = 'flex';
+            } finally {
+                setBtnLoading(btn, false);
+            }
+        });
+    }
+}
+
+function setBtnLoading(btn, loading) {
+    if (!btn) return;
+    const text = btn.querySelector('.btn-text');
+    const loader = btn.querySelector('.btn-loader');
+    if (loading) {
+        if (text) text.style.display = 'none';
+        if (loader) loader.style.display = 'flex';
+        btn.disabled = true;
+    } else {
+        if (text) text.style.display = '';
+        if (loader) loader.style.display = 'none';
+        btn.disabled = false;
+    }
+}

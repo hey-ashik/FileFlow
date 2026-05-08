@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/auth.php';
 
 $csrfToken = generateCSRFToken();
 $currentPage = $currentPage ?? 'home';
@@ -42,7 +43,8 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
     
     <!-- Main Stylesheet -->
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <?php $ver = '2.1.' . date('YmdH'); ?>
+    <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
 </head>
 <body class="<?php echo $currentPage === 'home' ? 'page-home' : 'page-inner'; ?>">
     <!-- Toast Container -->
@@ -71,13 +73,50 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
             
             <div class="navbar-links" id="nav-links">
                 <a href="/" class="nav-link <?php echo $currentPage === 'home' ? 'active' : ''; ?>" id="nav-home">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     <span>Home</span>
                 </a>
-                <a href="#create-section" class="nav-link nav-cta" id="nav-create" onclick="scrollToCreate(event)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-                    <span>Create Folder</span>
-                </a>
+                <?php if (isLoggedIn()): ?>
+                    <?php $currentUser = getCurrentUser(); ?>
+                    <a href="/dashboard" class="nav-link <?php echo $currentPage === 'dashboard' ? 'active' : ''; ?>" id="nav-dashboard">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <div class="nav-user-menu" id="nav-user-menu">
+                        <button class="nav-avatar" id="nav-avatar-btn" style="background:<?php echo htmlspecialchars($currentUser['color']); ?>">
+                            <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                        </button>
+                        <div class="nav-dropdown" id="nav-dropdown">
+                            <div class="nav-dropdown-header">
+                                <div class="nav-dropdown-avatar" style="background:<?php echo htmlspecialchars($currentUser['color']); ?>">
+                                    <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                </div>
+                                <div>
+                                    <div class="nav-dropdown-name"><?php echo htmlspecialchars($currentUser['name']); ?></div>
+                                    <div class="nav-dropdown-email"><?php echo htmlspecialchars($currentUser['email']); ?></div>
+                                </div>
+                            </div>
+                            <div class="nav-dropdown-divider"></div>
+                            <a href="/dashboard" class="nav-dropdown-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                Dashboard
+                            </a>
+                            <a href="/logout" class="nav-dropdown-item nav-dropdown-logout">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Logout
+                            </a>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <a href="/login" class="nav-link <?php echo $currentPage === 'login' ? 'active' : ''; ?>" id="nav-login">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Login</span>
+                    </a>
+                    <a href="/register" class="nav-link nav-cta" id="nav-register">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        <span>Sign Up</span>
+                    </a>
+                <?php endif; ?>
             </div>
             
             <button class="navbar-toggle" id="nav-toggle" aria-label="Toggle navigation">

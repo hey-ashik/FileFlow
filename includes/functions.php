@@ -36,7 +36,7 @@ function validateFolderName(string $name): array {
     }
     
     // Reserved names
-    $reserved = ['admin', 'api', 'assets', 'config', 'includes', 'pages', 'user_documents', 'uploads', 'index', 'login', 'register', 'dashboard', 'settings'];
+    $reserved = ['admin', 'api', 'assets', 'config', 'includes', 'pages', 'user_documents', 'uploads', 'index', 'login', 'register', 'dashboard', 'settings', 'logout', 'forgot-password', 'reset-password'];
     if (in_array(strtolower($name), $reserved)) {
         $errors[] = 'This folder name is reserved. Please choose another.';
     }
@@ -85,8 +85,23 @@ function createFolder(string $name): array {
     // Insert into database
     try {
         $db = getDB();
-        $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name) VALUES (?, ?, ?)");
-        $stmt->execute([$name, $slug, $displayName]);
+        $userId = null;
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (isset($_SESSION['user_id'])) $userId = $_SESSION['user_id'];
+        
+        // Try with user_id column first, fall back without it
+        try {
+            $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$name, $slug, $displayName, $userId]);
+        } catch (PDOException $colErr) {
+            // If user_id column doesn't exist, insert without it
+            if (strpos($colErr->getMessage(), 'user_id') !== false || strpos($colErr->getMessage(), 'Unknown column') !== false) {
+                $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $slug, $displayName]);
+            } else {
+                throw $colErr;
+            }
+        }
         
         return [
             'success' => true,
