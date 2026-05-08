@@ -36,7 +36,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for seamless sharing.</p>
+        <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for seamless sharing. Developed by <a href="https://wa.me/8801792250709" target="_blank" style="color: var(--green-400); font-weight: 600;">Ashikul Islam</a></p>
     </div>
 </footer>
 
