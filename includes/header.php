@@ -107,21 +107,29 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                     <?php endif; ?>
                     <div class="nav-user-menu" id="nav-user-menu">
                         <button class="nav-avatar" id="nav-avatar-btn"
-                            style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent; padding:0;'; ?>">
+                            style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent;'; ?>; padding: 0.25rem;">
                             <?php if (!empty($currentUser['avatar_path'])): ?>
-                                <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                                <div style="display:flex; width:36px; height:36px; border-radius:50%; overflow:hidden; flex-shrink:0; align-items:center; justify-content:center;">
+                                    <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                </div>
                             <?php else: ?>
-                                <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                <div style="display:flex; width:36px; height:36px; border-radius:50%; align-items:center; justify-content:center; flex-shrink:0;">
+                                    <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                </div>
                             <?php endif; ?>
                         </button>
                         <div class="nav-dropdown" id="nav-dropdown">
                             <div class="nav-dropdown-header">
                                 <div class="nav-dropdown-avatar"
-                                    style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent; padding:0;'; ?>">
+                                    style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent;'; ?>; padding:0;">
                                     <?php if (!empty($currentUser['avatar_path'])): ?>
-                                        <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                                        <div style="display:flex; width:40px; height:40px; border-radius:50%; overflow:hidden; flex-shrink:0; align-items:center; justify-content:center;">
+                                            <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                        </div>
                                     <?php else: ?>
-                                        <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                        <div style="display:flex; width:40px; height:40px; border-radius:50%; align-items:center; justify-content:center; flex-shrink:0;">
+                                            <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                                 <div>
@@ -156,7 +164,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
-                                Profile Settings
+                                Profile Card
                             </a>
                             <a href="/logout" class="nav-dropdown-item nav-dropdown-logout">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

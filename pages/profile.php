@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 $currentPage = 'profile';
-$pageTitle = 'Profile Settings - ' . APP_NAME;
+$pageTitle = 'Profile Card - ' . APP_NAME;
 require_once __DIR__ . '/../includes/header.php';
 
 $user = getCurrentUser();
@@ -12,7 +12,7 @@ if (!empty($user['profile_slug'])) {
 ?>
 
 <div class="container" style="max-width: 800px; padding: 2rem 1rem;">
-    <h1 style="margin-bottom: 2rem;">Profile Settings</h1>
+    <h1 style="margin-bottom: 2rem;">Profile Card</h1>
 
     <!-- Cover Photo Section -->
     <div class="profile-card" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
@@ -55,8 +55,9 @@ if (!empty($user['profile_slug'])) {
         </div>
     </div>
 
-    <form id="profile-form" class="profile-card" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Personal Information</h2>
+    <form id="profile-form" style="margin-bottom: 2rem;">
+        <div class="profile-card" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Personal Information</h2>
         
         <div class="form-group" style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Full Name</label>
@@ -89,36 +90,47 @@ if (!empty($user['profile_slug'])) {
             </button>
             <input type="hidden" id="social_links" name="social_links" value="<?php echo htmlspecialchars($user['social_links'] ?? '[]'); ?>">
         </div>
+        </div>
 
-        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 2rem;">My CV</h2>
+        <div class="profile-card" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Career Portfolio</h2>
         
+        <style>
+        .cv-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+        @media (max-width: 600px) {
+            .cv-actions { flex-direction: column !important; align-items: stretch !important; gap: 0.75rem !important; }
+            .cv-actions .btn { width: 100% !important; justify-content: center !important; text-align: center !important; margin: 0 !important; }
+        }
+        </style>
         <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Upload CV (PDF or DOCX)</label>
-            <div style="display: flex; gap: 1rem; align-items: center;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Upload Resume/CV (PDF or DOCX)</label>
+            <div class="cv-actions">
                 <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display: none;">
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('cv-input').click()">Select CV File</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('cv-input').click()">Select File</button>
                 <?php if (!empty($user['cv_path'])): ?>
                     <a id="view-cv-btn" href="<?php echo htmlspecialchars($user['cv_path']); ?>" target="_blank" class="btn btn-primary" style="background-color: #0ea5e9; text-decoration: none;">View Current CV</a>
-                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()">Remove CV</button>
+                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()">Remove</button>
                 <?php else: ?>
                     <a id="view-cv-btn" href="#" target="_blank" class="btn btn-primary" style="background-color: #0ea5e9; text-decoration: none; display: none;">View Current CV</a>
-                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()" style="display: none;">Remove CV</button>
+                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()" style="display: none;">Remove</button>
                 <?php endif; ?>
                 <span id="cv-upload-status" style="font-size: 0.875rem; color: #64748b;"></span>
             </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">CV Description (Optional)</label>
-            <textarea id="cv_description" name="cv_description" rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; resize: vertical;" placeholder="E.g., Download my full resume to learn more details about my experience."><?php echo htmlspecialchars($user['cv_description'] ?? ''); ?></textarea>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Description (Optional)</label>
+            <textarea id="cv_description" name="cv_description" rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; resize: vertical;" placeholder=""><?php echo htmlspecialchars($user['cv_description'] ?? ''); ?></textarea>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">CV Button Color</label>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Resume / CV Button Color</label>
             <input type="color" id="cv_button_color" name="cv_button_color" value="<?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>" style="height: 40px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; padding: 2px;">
         </div>
+        </div>
 
-        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 2rem;">Public Profile Card</h2>
+        <div class="profile-card" style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Public Profile Card</h2>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Custom URL Slug</label>
@@ -140,6 +152,7 @@ if (!empty($user['profile_slug'])) {
                 <p style="font-size: 0.85rem; color: #64748b; margin-top: 1rem;">Scan or share this QR code for your profile card.</p>
             </div>
         <?php endif; ?>
+        </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 1rem;">
             <button type="submit" id="save-btn" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">Save Profile Settings</button>
@@ -454,8 +467,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 showToast('Avatar uploaded successfully', 'success');
                 document.getElementById('avatar-preview').innerHTML = `<img src="${data.avatar_path}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">`;
-                document.querySelector('.nav-avatar').innerHTML = `<img src="${data.avatar_path}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                document.querySelector('.nav-dropdown-avatar').innerHTML = `<img src="${data.avatar_path}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                document.querySelector('.nav-avatar').innerHTML = `<div style="display:flex; width:36px; height:36px; border-radius:50%; overflow:hidden; flex-shrink:0; align-items:center; justify-content:center;"><img src="${data.avatar_path}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:block;"></div>`;
+                document.querySelector('.nav-dropdown-avatar').innerHTML = `<div style="display:flex; width:40px; height:40px; border-radius:50%; overflow:hidden; flex-shrink:0; align-items:center; justify-content:center;"><img src="${data.avatar_path}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; display:block;"></div>`;
             } else {
                 showToast(data.message, 'error');
             }
