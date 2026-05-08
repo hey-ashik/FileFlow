@@ -107,14 +107,22 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                     <?php endif; ?>
                     <div class="nav-user-menu" id="nav-user-menu">
                         <button class="nav-avatar" id="nav-avatar-btn"
-                            style="background:<?php echo htmlspecialchars($currentUser['color']); ?>">
-                            <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                            style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent; padding:0;'; ?>">
+                            <?php if (!empty($currentUser['avatar_path'])): ?>
+                                <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                            <?php else: ?>
+                                <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                            <?php endif; ?>
                         </button>
                         <div class="nav-dropdown" id="nav-dropdown">
                             <div class="nav-dropdown-header">
                                 <div class="nav-dropdown-avatar"
-                                    style="background:<?php echo htmlspecialchars($currentUser['color']); ?>">
-                                    <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                    style="<?php echo empty($currentUser['avatar_path']) ? 'background:'.htmlspecialchars($currentUser['color']) : 'background:transparent; padding:0;'; ?>">
+                                    <?php if (!empty($currentUser['avatar_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars($currentUser['avatar_path']); ?>" alt="Avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                                    <?php else: ?>
+                                        <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
+                                    <?php endif; ?>
                                 </div>
                                 <div>
                                     <div class="nav-dropdown-name"><?php echo htmlspecialchars($currentUser['name']); ?>
@@ -143,6 +151,13 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                     Admin Panel
                                 </a>
                             <?php endif; ?>
+                            <a href="/profile" class="nav-dropdown-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                Profile Settings
+                            </a>
                             <a href="/logout" class="nav-dropdown-item nav-dropdown-logout">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">

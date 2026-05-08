@@ -75,6 +75,13 @@ switch (true) {
         }
         require __DIR__ . '/pages/dashboard.php';
         break;
+    case $path === '/profile':
+        if (!isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
+        require __DIR__ . '/pages/profile.php';
+        break;
     case $path === '/admin':
         if (!isLoggedIn()) {
             header('Location: /login');
@@ -106,6 +113,9 @@ switch (true) {
         break;
     case preg_match('#^/api/dashboard-stats$#', $path):
         require __DIR__ . '/api/dashboard-stats.php';
+        break;
+    case preg_match('#^/api/profile$#', $path):
+        require __DIR__ . '/api/profile.php';
         break;
 
     // Existing API routes
@@ -143,6 +153,12 @@ switch (true) {
     // Static assets
     case preg_match('#^/assets/#', $path):
         return false;
+
+    // Public Profile route
+    case preg_match('#^/u/([a-zA-Z0-9_-]+)$#', $path, $matches):
+        $profileSlug = strtolower($matches[1]);
+        require __DIR__ . '/pages/profile-card.php';
+        break;
 
     // Folder page - catch-all
     default:

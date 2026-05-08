@@ -30,6 +30,23 @@ function setupAdminAndSchema(): void {
             $db->exec("ALTER TABLE users ADD COLUMN space_limit_mb INT NOT NULL DEFAULT 100");
         }
 
+        try {
+            $db->query("SELECT avatar_path FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users 
+                ADD COLUMN `avatar_path` VARCHAR(255) DEFAULT NULL,
+                ADD COLUMN `phone` VARCHAR(30) DEFAULT NULL,
+                ADD COLUMN `work_experience` TEXT DEFAULT NULL,
+                ADD COLUMN `social_links` TEXT DEFAULT NULL,
+                ADD COLUMN `profile_slug` VARCHAR(60) UNIQUE DEFAULT NULL;");
+        }
+        
+        try {
+            $db->query("SELECT cover_path FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN `cover_path` VARCHAR(255) DEFAULT NULL");
+        }
+
         // Setup admin user
         $email = 'ashikulislam2070@gmail.com';
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");

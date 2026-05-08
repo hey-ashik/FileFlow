@@ -75,6 +75,7 @@ function loginUser(string $email, string $password): array {
     $_SESSION['user_name'] = $user['full_name'];
     $_SESSION['user_email'] = $user['email'];
     $_SESSION['user_color'] = $user['avatar_color'];
+    $_SESSION['user_avatar'] = $user['avatar_path'] ?? null;
     $_SESSION['user_timezone'] = $user['timezone'] ?? 'UTC';
     $_SESSION['is_admin'] = (isset($user['is_admin']) && $user['is_admin'] == 1);
 
@@ -106,11 +107,21 @@ function isAdmin(): bool {
  */
 function getCurrentUser(): ?array {
     if (!isLoggedIn()) return null;
+    $db = getDB();
+    $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch();
     return [
         'id' => $_SESSION['user_id'],
         'name' => $_SESSION['user_name'],
         'email' => $_SESSION['user_email'],
         'color' => $_SESSION['user_color'] ?? '#16a34a',
+        'avatar_path' => $user['avatar_path'] ?? null,
+        'cover_path' => $user['cover_path'] ?? null,
+        'profile_slug' => $user['profile_slug'] ?? null,
+        'phone' => $user['phone'] ?? null,
+        'work_experience' => $user['work_experience'] ?? null,
+        'social_links' => $user['social_links'] ?? null,
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
         'is_admin' => $_SESSION['is_admin'] ?? false
     ];

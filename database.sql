@@ -18,12 +18,23 @@ CREATE TABLE IF NOT EXISTS `users` (
     `email` VARCHAR(191) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `avatar_color` VARCHAR(7) NOT NULL DEFAULT '#16a34a',
+    `avatar_path` VARCHAR(255) DEFAULT NULL,
+    `cover_path` VARCHAR(255) DEFAULT NULL,
+    `phone` VARCHAR(30) DEFAULT NULL,
+    `work_experience` TEXT DEFAULT NULL,
+    `social_links` TEXT DEFAULT NULL,
+    `profile_slug` VARCHAR(60) UNIQUE DEFAULT NULL,
+    `phone` VARCHAR(30) DEFAULT NULL,
+    `work_experience` TEXT DEFAULT NULL,
+    `social_links` TEXT DEFAULT NULL,
+    `profile_slug` VARCHAR(60) UNIQUE DEFAULT NULL,
     `timezone` VARCHAR(64) DEFAULT 'UTC',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `last_login` DATETIME DEFAULT NULL,
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-    INDEX `idx_email` (`email`)
+    INDEX `idx_email` (`email`),
+    INDEX `idx_profile_slug` (`profile_slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
