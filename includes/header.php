@@ -51,6 +51,9 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
 </head>
 
 <body class="<?php echo $currentPage === 'home' ? 'page-home' : 'page-inner'; ?>">
+    <!-- SPA Loader -->
+    <div id="spa-loader"><div id="spa-loader-fill"></div></div>
+
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 

@@ -4,15 +4,19 @@
 
 let isUploading = false;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initNavbar();
-    initCreateForm();
-    initUpload();
-    initHistory();
-    initQR();
-    initAuthForms();
-    initUserDropdown();
+let isGlobalInitDone = false;
 
+document.addEventListener('DOMContentLoaded', () => {
+    initGlobal();
+    initApp();
+    initSpaNavigation();
+});
+
+function initGlobal() {
+    if (isGlobalInitDone) return;
+    initNavbar();
+    initUserDropdown();
+    
     // Prevent accidental navigation during uploads
     window.addEventListener('beforeunload', (e) => {
         if (isUploading) {
@@ -22,7 +26,139 @@ document.addEventListener('DOMContentLoaded', () => {
             return msg;
         }
     });
-});
+
+    isGlobalInitDone = true;
+}
+
+function initApp() {
+    initCreateForm();
+    initUpload();
+    initHistory();
+    initQR();
+    initAuthForms();
+}
+
+/* ===== SPA NAVIGATION (Next.js Style) ===== */
+const spaCache = new Map();
+
+function initSpaNavigation() {
+    const loader = document.getElementById('spa-loader-fill');
+    
+    // Intercept all internal link clicks
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link || !link.href) return;
+        
+        const url = new URL(link.href);
+        const isInternal = url.origin === window.location.origin;
+        const isSelf = link.getAttribute('target') === '_self' || !link.getAttribute('target');
+        const isNotSpecial = !link.getAttribute('download') && !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:');
+        
+        if (isInternal && isSelf && isNotSpecial) {
+            e.preventDefault();
+            if (window.location.href === link.href) return;
+            handleSpaLink(link.href);
+        }
+    });
+
+    // Prefetch on hover
+    document.addEventListener('mouseover', (e) => {
+        const link = e.target.closest('a');
+        if (!link || !link.href) return;
+        
+        const url = new URL(link.href);
+        if (url.origin === window.location.origin && !spaCache.has(link.href)) {
+            prefetchSpaLink(link.href);
+        }
+    });
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', () => {
+        handleSpaLink(window.location.href, false);
+    });
+}
+
+async function prefetchSpaLink(url) {
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const html = await response.text();
+            spaCache.set(url, html);
+        }
+    } catch (err) {}
+}
+
+async function handleSpaLink(url, push = true) {
+    if (isUploading) {
+        if (!confirm('An upload is in progress. Leaving will cancel it. Continue?')) return;
+    }
+
+    const loader = document.getElementById('spa-loader-fill');
+    if (loader) {
+        loader.style.width = '30%';
+        loader.style.opacity = '1';
+    }
+
+    try {
+        let html = spaCache.get(url);
+        if (!html) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Failed to load page');
+            html = await response.text();
+        }
+        
+        if (loader) loader.style.width = '70%';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Update Title and Content
+        document.title = doc.title;
+        const newContent = doc.querySelector('.main-content');
+        const currentContent = document.querySelector('.main-content');
+        
+        if (newContent && currentContent) {
+            currentContent.innerHTML = newContent.innerHTML;
+            
+            // Update Body Classes (Home vs Inner)
+            document.body.className = doc.body.className;
+            
+            // Update Navbar Active States
+            updateNavbarActive(url);
+            
+            // Update URL
+            if (push) history.pushState({}, '', url);
+            
+            // Re-initialize scripts for new content
+            initApp();
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        if (loader) {
+            loader.style.width = '100%';
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.width = '0%', 300);
+            }, 200);
+        }
+    } catch (err) {
+        console.error('SPA Load Error:', err);
+        window.location.href = url; // Fallback to normal load
+    }
+}
+
+function updateNavbarActive(url) {
+    const path = new URL(url).pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+        const linkPath = new URL(link.href).pathname;
+        if (linkPath === path) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
 
 /* ===== TOAST NOTIFICATIONS ===== */
 function showToast(message, type = 'success', duration = 4000) {
