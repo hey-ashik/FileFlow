@@ -28,6 +28,7 @@ button{cursor:pointer}
 h1,h2,h3,h4{line-height:1.2;font-weight:700}
 .container{max-width:1200px;margin:0 auto;padding:0 24px}
 .main-content{min-height:100vh;padding-top:90px}
+.page-home .main-content{padding-top:0}
 
 /* ===== NAVBAR ===== */
 .navbar {
@@ -89,7 +90,7 @@ h1,h2,h3,h4{line-height:1.2;font-weight:700}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== HERO ===== */
-.hero{position:relative;min-height:75vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:linear-gradient(135deg,var(--green-50) 0%,var(--white) 50%,var(--green-50) 100%)}
+.hero{position:relative;min-height:75vh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:linear-gradient(135deg,var(--green-50) 0%,var(--white) 50%,var(--green-50) 100%);padding-top:90px}
 .hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .hero-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4;animation:float 8s ease-in-out infinite}
 .hero-orb-1{width:400px;height:400px;background:var(--green-300);top:-100px;right:-100px;animation-delay:0s}
