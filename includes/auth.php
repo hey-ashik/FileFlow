@@ -76,8 +76,9 @@ function loginUser(string $email, string $password): array {
     $_SESSION['user_email'] = $user['email'];
     $_SESSION['user_color'] = $user['avatar_color'];
     $_SESSION['user_timezone'] = $user['timezone'] ?? 'UTC';
+    $_SESSION['is_admin'] = (isset($user['is_admin']) && $user['is_admin'] == 1);
 
-    return ['success' => true, 'user' => [
+    return ['success' => true, 'is_admin' => $_SESSION['is_admin'], 'user' => [
         'id' => $user['id'],
         'name' => $user['full_name'],
         'email' => $user['email']
@@ -93,6 +94,14 @@ function isLoggedIn(): bool {
 }
 
 /**
+ * Check if user is admin
+ */
+function isAdmin(): bool {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+}
+
+/**
  * Get current user data
  */
 function getCurrentUser(): ?array {
@@ -102,7 +111,8 @@ function getCurrentUser(): ?array {
         'name' => $_SESSION['user_name'],
         'email' => $_SESSION['user_email'],
         'color' => $_SESSION['user_color'] ?? '#16a34a',
-        'timezone' => $_SESSION['user_timezone'] ?? 'UTC'
+        'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
+        'is_admin' => $_SESSION['is_admin'] ?? false
     ];
 }
 

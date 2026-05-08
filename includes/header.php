@@ -15,7 +15,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     
     <!-- SEO Meta Tags -->
@@ -43,7 +43,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
     
     <!-- Main Stylesheet -->
-    <?php $ver = '2.1.' . date('YmdH'); ?>
+    <?php $ver = '3.0.' . date('YmdH'); ?>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
 </head>
 <body class="<?php echo $currentPage === 'home' ? 'page-home' : 'page-inner'; ?>">
@@ -82,6 +82,12 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         <span>Dashboard</span>
                     </a>
+                    <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
+                        <a href="/admin" class="nav-link <?php echo $currentPage === 'admin' ? 'active' : ''; ?>" id="nav-admin">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 4.9V12c0 5.5-4 10.7-9 12-5-1.3-9-6.5-9-12V6.9L12 2z"/></svg>
+                            <span>Admin Panel</span>
+                        </a>
+                    <?php endif; ?>
                     <div class="nav-user-menu" id="nav-user-menu">
                         <button class="nav-avatar" id="nav-avatar-btn" style="background:<?php echo htmlspecialchars($currentUser['color']); ?>">
                             <?php echo strtoupper(substr($currentUser['name'], 0, 1)); ?>
@@ -101,9 +107,15 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                                 Dashboard
                             </a>
+                            <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
+                            <a href="/admin" class="nav-dropdown-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 4.9V12c0 5.5-4 10.7-9 12-5-1.3-9-6.5-9-12V6.9L12 2z"/></svg>
+                                Admin Panel
+                            </a>
+                            <?php endif; ?>
                             <a href="/logout" class="nav-dropdown-item nav-dropdown-logout">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                Logout
+                                <span>Logout</span>
                             </a>
                         </div>
                     </div>

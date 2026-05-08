@@ -2,6 +2,8 @@
  * FileFlow - Main Application JavaScript
  */
 
+let isUploading = false;
+
 document.addEventListener('DOMContentLoaded', () => {
     initNavbar();
     initCreateForm();
@@ -10,6 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initQR();
     initAuthForms();
     initUserDropdown();
+
+    // Prevent accidental navigation during uploads
+    window.addEventListener('beforeunload', (e) => {
+        if (isUploading) {
+            const msg = 'An upload is currently in progress. If you leave this page, your upload will be cancelled.';
+            e.preventDefault();
+            e.returnValue = msg;
+            return msg;
+        }
+    });
 });
 
 /* ===== TOAST NOTIFICATIONS ===== */
@@ -277,58 +289,94 @@ async function handleFiles(files) {
 
     const totalFiles = validFiles.length;
     const totalBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
-    let bytesUploadedPrev = 0; // bytes from completed files
     let successCount = 0;
     let failCount = 0;
+    const startTime = Date.now();
+    isUploading = true;
 
-    // Upload files one by one for real-time progress
+    if (progressHeader) progressHeader.textContent = `Uploading ${totalFiles} file(s)...`;
+
+    // Create UI items for all files
+    const fileItems = [];
     for (let i = 0; i < totalFiles; i++) {
-        const file = validFiles[i];
-        if (progressHeader) progressHeader.textContent = `Uploading ${i + 1} of ${totalFiles}...`;
-
-        // Add "uploading" item to file list
         const item = document.createElement('div');
         item.className = 'upload-file-item';
-        item.innerHTML = `<span>${file.name}</span><span class="file-status">⏳ Uploading...</span>`;
+        item.innerHTML = `<span>${validFiles[i].name}</span><span class="file-status">Uploading...</span>`;
         if (fileList) fileList.appendChild(item);
+        fileItems.push(item);
+    }
 
-        try {
-            const result = await uploadSingleFile(file, folderId, {
-                onProgress: (loaded, total) => {
-                    const overallLoaded = bytesUploadedPrev + loaded;
-                    const overallPct = totalBytes > 0 ? Math.min(Math.round((overallLoaded / totalBytes) * 100), 99) : 0;
-                    if (progressBar) progressBar.style.width = overallPct + '%';
-                    if (progressText) progressText.textContent = overallPct + '%';
+    try {
+        const result = await uploadBatch(validFiles, folderId, {
+            onProgress: (loaded, total) => {
+                const overallPct = totalBytes > 0 ? Math.min(Math.round((loaded / total) * 100), 99) : 0;
+                if (progressBar) progressBar.style.width = overallPct + '%';
+                if (progressText) progressText.textContent = overallPct + '%';
+                
+                const timeElapsed = (Date.now() - startTime) / 1000;
+                if (timeElapsed > 0.5 && loaded > 0) {
+                    const speedBps = loaded / timeElapsed;
+                    const bytesRemaining = total - loaded;
+                    const timeRemainingSec = Math.max(0, bytesRemaining / speedBps);
+                    
+                    let timeStr = "";
+                    if (timeRemainingSec >= 3600) {
+                        timeStr = Math.floor(timeRemainingSec / 3600) + "h " + Math.floor((timeRemainingSec % 3600) / 60) + "m";
+                    } else if (timeRemainingSec >= 60) {
+                        timeStr = Math.floor(timeRemainingSec / 60) + "m " + Math.floor(timeRemainingSec % 60) + "s";
+                    } else {
+                        timeStr = Math.floor(timeRemainingSec) + "s";
+                    }
+                    
+                    fileItems.forEach(item => {
+                        if (item.className === 'upload-file-item') {
+                             item.querySelector('.file-status').textContent = `Uploading... ${overallPct}% (${timeStr} remaining)`;
+                        }
+                    });
+                } else {
+                    fileItems.forEach(item => {
+                        if (item.className === 'upload-file-item') {
+                             item.querySelector('.file-status').textContent = `Uploading... ${overallPct}%`;
+                        }
+                    });
+                }
+            }
+        });
+
+        if (result.success && result.results) {
+            result.results.forEach((r, idx) => {
+                const item = fileItems[idx];
+                if (r.success && r.file) {
+                    addFileCard(r.file);
+                    successCount++;
+                    if (item) {
+                        item.className = 'upload-file-item success';
+                        item.querySelector('.file-status').textContent = 'Uploaded';
+                    }
+                } else {
+                    failCount++;
+                    if (item) {
+                        item.className = 'upload-file-item error';
+                        item.querySelector('.file-status').textContent = (r.errors?.[0] || 'Failed');
+                    }
                 }
             });
-
-            if (result.success && result.results) {
-                result.results.forEach(r => {
-                    if (r.success && r.file) {
-                        addFileCard(r.file);
-                        successCount++;
-                        item.className = 'upload-file-item success';
-                        item.querySelector('.file-status').textContent = '✓ Uploaded';
-                    } else {
-                        failCount++;
-                        item.className = 'upload-file-item error';
-                        item.querySelector('.file-status').textContent = '✗ ' + (r.errors?.[0] || 'Failed');
-                    }
-                });
-                if (result.csrf_token) updateCSRF(result.csrf_token);
-            } else {
+            if (result.csrf_token) updateCSRF(result.csrf_token);
+        } else {
+            // Whole batch failed (e.g. storage limit exceeded)
+            fileItems.forEach(item => {
                 failCount++;
                 item.className = 'upload-file-item error';
-                item.querySelector('.file-status').textContent = '✗ ' + (result.errors?.[0] || 'Failed');
-                if (result.csrf_token) updateCSRF(result.csrf_token);
-            }
-        } catch (err) {
+                item.querySelector('.file-status').textContent = (result.errors?.[0] || 'Failed');
+            });
+            if (result.csrf_token) updateCSRF(result.csrf_token);
+        }
+    } catch (err) {
+        fileItems.forEach(item => {
             failCount++;
             item.className = 'upload-file-item error';
-            item.querySelector('.file-status').textContent = '✗ Network error';
-        }
-
-        bytesUploadedPrev += file.size;
+            item.querySelector('.file-status').textContent = 'Network error';
+        });
     }
 
     // Final state: 100%
@@ -350,6 +398,8 @@ async function handleFiles(files) {
     // Reset file input
     const fileInput = document.getElementById('file-input');
     if (fileInput) fileInput.value = '';
+    
+    isUploading = false;
 
     // Hide progress after delay
     setTimeout(() => {
@@ -358,14 +408,14 @@ async function handleFiles(files) {
 }
 
 /**
- * Upload a single file via XHR with real-time progress callback
+ * Upload a batch of files via XHR with real-time progress callback
  */
-function uploadSingleFile(file, folderId, { onProgress }) {
+function uploadBatch(files, folderId, { onProgress }) {
     return new Promise((resolve, reject) => {
         const formData = new FormData();
         formData.append('folder_id', folderId);
         formData.append('csrf_token', getCSRF());
-        formData.append('files[]', file);
+        files.forEach(file => formData.append('files[]', file));
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/upload');
@@ -550,7 +600,7 @@ function initAuthForms() {
                 if (data.csrf_token) updateCSRF(data.csrf_token);
                 if (data.success) {
                     showToast('Login successful! Redirecting...');
-                    setTimeout(() => window.location.href = '/dashboard', 800);
+                    setTimeout(() => window.location.href = data.is_admin ? '/admin' : '/dashboard', 800);
                 } else {
                     errEl.textContent = data.errors?.[0] || 'Login failed.';
                     errEl.style.display = 'flex';

@@ -7,6 +7,49 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
 /**
+ * Setup database schema and admin user if they do not exist
+ */
+function setupAdminAndSchema(): void {
+    static $setupDone = false;
+    if ($setupDone) return;
+    $setupDone = true;
+
+    try {
+        $db = getDB();
+        
+        // Add columns if not exist
+        try {
+            $db->query("SELECT is_admin FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0");
+        }
+        
+        try {
+            $db->query("SELECT space_limit_mb FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN space_limit_mb INT NOT NULL DEFAULT 100");
+        }
+
+        // Setup admin user
+        $email = 'ashikulislam2070@gmail.com';
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            $hash = password_hash('Ashik@21032001', PASSWORD_BCRYPT, ['cost' => 12]);
+            $db->prepare("INSERT INTO users (full_name, email, password_hash, avatar_color, is_admin, space_limit_mb) VALUES (?, ?, ?, ?, ?, ?)")
+               ->execute(['Admin', $email, $hash, '#16a34a', 1, 1000]);
+        } else {
+            // Ensure they are admin
+            $db->prepare("UPDATE users SET is_admin = 1 WHERE id = ?")->execute([$user['id']]);
+        }
+    } catch (PDOException $e) {
+        error_log("Setup error: " . $e->getMessage());
+    }
+}
+
+/**
  * Sanitize folder name for URL slug
  */
 function sanitizeSlug(string $name): string {

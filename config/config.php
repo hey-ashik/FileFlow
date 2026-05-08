@@ -3,6 +3,9 @@
  * FileFlow - Application Configuration
  */
 
+// Set Default Timezone to Local Time
+date_default_timezone_set('Asia/Dhaka');
+
 // Application settings
 define('APP_NAME', 'FileFlow');
 define('APP_VERSION', '1.0.0');

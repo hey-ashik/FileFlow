@@ -7,6 +7,16 @@ $stats = getUserDashboardStats($user['id']);
 $folders = getUserFolders($user['id']);
 $uploadStats = getUploadStats($user['id'], 7);
 $fileTypeStats = getFileTypeStats($user['id']);
+
+// Get user limit
+$db = getDB();
+$stmt = $db->prepare("SELECT space_limit_mb FROM users WHERE id = ?");
+$stmt->execute([$user['id']]);
+$uRow = $stmt->fetch();
+$limitMb = $uRow ? (int)$uRow['space_limit_mb'] : 100;
+$limitBytes = $limitMb * 1024 * 1024;
+$usagePct = $limitBytes > 0 ? min(100, round(($stats['total_size'] / $limitBytes) * 100)) : 0;
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -48,9 +58,18 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="dash-stat-icon" style="background:#f5f3ff;color:#8b5cf6">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
                 </div>
-                <div class="dash-stat-info">
-                    <span class="dash-stat-value"><?php echo $stats['total_size_formatted']; ?></span>
-                    <span class="dash-stat-label">Storage Used</span>
+                <div class="dash-stat-info" style="flex: 1; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px;">
+                        <div>
+                            <span class="dash-stat-value" style="font-size: 1.25rem;"><?php echo $stats['total_size_formatted']; ?></span>
+                            <span class="dash-stat-label" style="font-size: 0.75rem;">of <?php echo $limitMb; ?> MB used</span>
+                        </div>
+                        <span style="font-size: 0.75rem; font-weight: 600; color: <?php echo $usagePct > 90 ? '#ef4444' : '#8b5cf6'; ?>;"><?php echo $usagePct; ?>%</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #ede9fe; border-radius: 99px; overflow: hidden; margin-bottom: 6px;">
+                        <div style="height: 100%; background: <?php echo $usagePct > 90 ? '#ef4444' : '#8b5cf6'; ?>; width: <?php echo $usagePct; ?>%; border-radius: 99px;"></div>
+                    </div>
+                    <span style="font-size: 0.7rem; color: #6b7280;">Delete files to free up space</span>
                 </div>
             </div>
             <div class="dash-stat-card">
@@ -178,7 +197,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="dash-folder-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                         </div>
-                        <div class="dash-folder-info">
+                        <div class="dash-folder-info" style="flex: 1;">
                             <div class="dash-folder-name"><?php echo htmlspecialchars($f['display_name']); ?></div>
                             <div class="dash-folder-meta">
                                 <span><?php echo $f['total_files']; ?> files</span>
@@ -186,7 +205,9 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span><?php echo timeAgo($f['created_at']); ?></span>
                             </div>
                         </div>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="dash-folder-arrow"><polyline points="9 18 15 12 9 6"/></svg>
+                        <button class="btn-icon" style="color: var(--red-500); border: none; background: transparent; padding: 8px; cursor: pointer; transition: all 0.2s;" onclick="event.preventDefault(); deleteMyFolder(<?php echo $f['id']; ?>)" title="Delete Folder">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -303,6 +324,31 @@ document.addEventListener('DOMContentLoaded', () => {
     drawUploadChart();
     window.addEventListener('resize', drawUploadChart);
 });
+
+async function deleteMyFolder(folderId) {
+    customConfirm(
+        'Delete Folder',
+        'Are you sure you want to delete this folder and ALL its files? This will free up space.',
+        async () => {
+            const formData = new FormData();
+            formData.append('folder_id', folderId);
+            formData.append('csrf_token', getCSRF());
+            
+            try {
+                const res = await fetch('/api/user/delete-folder', { method: 'POST', body: formData });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Folder deleted successfully.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.errors?.[0] || 'Delete failed', 'error');
+                }
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        }
+    );
+}
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

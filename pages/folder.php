@@ -153,6 +153,11 @@ require_once __DIR__ . '/../includes/header.php';
                         <a href="/api/download?id=<?php echo $file['id']; ?>" class="btn btn-sm btn-download" title="Download" id="btn-download-<?php echo $file['id']; ?>">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         </a>
+                        <?php if (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']): ?>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFile(<?php echo $file['id']; ?>)" title="Delete File" style="padding: 0.5rem;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -170,5 +175,32 @@ require_once __DIR__ . '/../includes/header.php';
 <input type="hidden" id="folder-id" value="<?php echo $folder['id']; ?>">
 <input type="hidden" id="folder-slug" value="<?php echo htmlspecialchars($folder['slug']); ?>">
 <input type="hidden" id="folder-url" value="<?php echo $folderUrl; ?>">
+
+<script>
+async function deleteFile(fileId) {
+    customConfirm(
+        'Delete File',
+        'Are you sure you want to delete this file? This cannot be undone.',
+        async () => {
+            const formData = new FormData();
+            formData.append('file_id', fileId);
+            formData.append('csrf_token', getCSRF());
+            
+            try {
+                const res = await fetch('/api/delete-file', { method: 'POST', body: formData });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('File deleted successfully.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.errors?.[0] || 'Delete failed', 'error');
+                }
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        }
+    );
+}
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

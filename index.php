@@ -15,6 +15,9 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/auth.php';
 
+// Setup schema and admin user if needed
+setupAdminAndSchema();
+
 // Ensure user_documents directory exists
 if (!is_dir(UPLOAD_DIR)) {
     mkdir(UPLOAD_DIR, 0755, true);
@@ -72,6 +75,17 @@ switch (true) {
         }
         require __DIR__ . '/pages/dashboard.php';
         break;
+    case $path === '/admin':
+        if (!isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
+        if (!isAdmin()) {
+            header('Location: /dashboard');
+            exit;
+        }
+        require __DIR__ . '/pages/admin.php';
+        break;
     case $path === '/logout':
         logoutUser();
         header('Location: /');
@@ -109,6 +123,21 @@ switch (true) {
         break;
     case preg_match('#^/api/folder-info$#', $path):
         require __DIR__ . '/api/folder-info.php';
+        break;
+
+    // Admin API routes
+    case preg_match('#^/api/admin/update-user$#', $path):
+        require __DIR__ . '/api/admin-update-user.php';
+        break;
+    case preg_match('#^/api/admin/delete-folder$#', $path):
+        require __DIR__ . '/api/admin-delete-folder.php';
+        break;
+    case preg_match('#^/api/admin/delete-all-folders$#', $path):
+        require __DIR__ . '/api/admin-delete-all.php';
+        break;
+        
+    case preg_match('#^/api/user/delete-folder$#', $path):
+        require __DIR__ . '/api/user-delete-folder.php';
         break;
 
     // Static assets

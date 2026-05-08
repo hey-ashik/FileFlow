@@ -26,7 +26,7 @@ if ($folderId <= 0) {
 
 // Verify folder exists
 $db = getDB();
-$stmt = $db->prepare("SELECT id, slug FROM folders WHERE id = ? AND is_active = 1");
+$stmt = $db->prepare("SELECT id, slug, user_id FROM folders WHERE id = ? AND is_active = 1");
 $stmt->execute([$folderId]);
 $folder = $stmt->fetch();
 
@@ -61,6 +61,25 @@ $fileCount = count($files['name']);
 // Check file count limit
 if ($fileCount > MAX_FILES_PER_UPLOAD) {
     jsonResponse(['success' => false, 'errors' => ['Maximum ' . MAX_FILES_PER_UPLOAD . ' files per upload.']], 400);
+}
+
+// Check storage space limit
+if (!empty($folder['user_id'])) {
+    $stats = getUserDashboardStats($folder['user_id']);
+    
+    $stmtUser = $db->prepare("SELECT space_limit_mb FROM users WHERE id = ?");
+    $stmtUser->execute([$folder['user_id']]);
+    $uRow = $stmtUser->fetch();
+    $limitMb = $uRow ? (int)$uRow['space_limit_mb'] : 100;
+    
+    $totalUploadSize = 0;
+    for ($i = 0; $i < $fileCount; $i++) {
+        $totalUploadSize += $files['size'][$i];
+    }
+    
+    if (($stats['total_size'] + $totalUploadSize) > ($limitMb * 1024 * 1024)) {
+        jsonResponse(['success' => false, 'errors' => ["Storage limit exceeded. Maximum limit is {$limitMb}MB. Please delete files to free up space."]], 400);
+    }
 }
 
 for ($i = 0; $i < $fileCount; $i++) {
