@@ -1,0 +1,500 @@
+/**
+ * FileFlow - Main Application JavaScript
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    initNavbar();
+    initCreateForm();
+    initUpload();
+    initHistory();
+    initQR();
+});
+
+/* ===== TOAST NOTIFICATIONS ===== */
+function showToast(message, type = 'success', duration = 4000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = {
+        success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+    };
+    toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(40px)';
+        toast.style.transition = 'all .3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+/* ===== CSRF TOKEN ===== */
+function getCSRF() {
+    return document.getElementById('csrf-token')?.value || '';
+}
+function updateCSRF(newToken) {
+    const el = document.getElementById('csrf-token');
+    if (el && newToken) el.value = newToken;
+    if (typeof CSRF_TOKEN !== 'undefined' && newToken) window.CSRF_TOKEN = newToken;
+}
+
+/* ===== NAVBAR ===== */
+function initNavbar() {
+    const toggle = document.getElementById('nav-toggle');
+    const links = document.getElementById('nav-links');
+    if (toggle && links) {
+        toggle.addEventListener('click', () => {
+            links.classList.toggle('open');
+            toggle.classList.toggle('active');
+        });
+        document.addEventListener('click', (e) => {
+            if (!toggle.contains(e.target) && !links.contains(e.target)) {
+                links.classList.remove('open');
+                toggle.classList.remove('active');
+            }
+        });
+    }
+    // Navbar scroll effect
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+        const navbar = document.getElementById('navbar');
+        if (!navbar) return;
+        const scroll = window.scrollY;
+        if (scroll > 50) {
+            navbar.style.boxShadow = '0 1px 3px rgba(0,0,0,.1)';
+        } else {
+            navbar.style.boxShadow = 'none';
+        }
+        lastScroll = scroll;
+    });
+}
+
+function scrollToCreate(e) {
+    e.preventDefault();
+    const section = document.getElementById('create-section');
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => document.getElementById('folder-name-input')?.focus(), 500);
+    }
+}
+
+/* ===== CREATE FOLDER ===== */
+function initCreateForm() {
+    const form = document.getElementById('create-folder-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('folder-name-input');
+        const btn = document.getElementById('btn-create-folder');
+        const hint = document.getElementById('folder-hint');
+        const folderName = input.value.trim();
+
+        if (!folderName) {
+            hint.textContent = 'Please enter a folder name.';
+            hint.className = 'input-hint error';
+            input.focus();
+            return;
+        }
+
+        // Disable button
+        btn.querySelector('.btn-text').style.display = 'none';
+        btn.querySelector('.btn-loader').style.display = 'flex';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('folder_name', folderName);
+            formData.append('csrf_token', getCSRF());
+
+            const res = await fetch('/api/create-folder', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                updateCSRF(data.csrf_token);
+                showCreateSuccess(data.folder);
+                saveFolderToHistory(data.folder);
+                showToast('Folder created successfully!');
+            } else {
+                hint.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> ${data.errors?.[0] || 'Failed to create folder.'}`;
+                hint.className = 'input-hint error';
+                showToast(data.errors?.[0] || 'Failed to create folder.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error. Please try again.', 'error');
+        } finally {
+            btn.querySelector('.btn-text').style.display = '';
+            btn.querySelector('.btn-loader').style.display = 'none';
+            btn.disabled = false;
+        }
+    });
+}
+
+function showCreateSuccess(folder) {
+    const form = document.getElementById('create-folder-form');
+    const icon = document.querySelector('.create-icon');
+    const success = document.getElementById('create-success');
+    const urlInput = document.getElementById('success-url');
+    const gotoBtn = document.getElementById('btn-goto-folder');
+
+    if (form) form.style.display = 'none';
+    if (icon) icon.style.display = 'none';
+    if (success) success.style.display = 'block';
+    if (urlInput) urlInput.value = folder.url;
+    if (gotoBtn) gotoBtn.href = '/' + folder.slug + '/';
+
+    // Generate QR
+    const qrBox = document.getElementById('qr-code');
+    if (qrBox && typeof QRCode !== 'undefined') {
+        qrBox.innerHTML = '';
+        new QRCode(qrBox, { text: folder.url, width: 128, height: 128, colorDark: '#166534', colorLight: '#ffffff' });
+    }
+}
+
+function resetCreateForm() {
+    const form = document.getElementById('create-folder-form');
+    const icon = document.querySelector('.create-icon');
+    const success = document.getElementById('create-success');
+    const hint = document.getElementById('folder-hint');
+    const input = document.getElementById('folder-name-input');
+
+    if (form) { form.style.display = ''; form.reset(); }
+    if (icon) icon.style.display = '';
+    if (success) success.style.display = 'none';
+    if (hint) {
+        hint.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Use letters, numbers, hyphens, or underscores.`;
+        hint.className = 'input-hint';
+    }
+    if (input) input.focus();
+}
+
+function copyFolderUrl() {
+    const input = document.getElementById('success-url');
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+        showToast('Link copied to clipboard!');
+    }).catch(() => {
+        input.select();
+        document.execCommand('copy');
+        showToast('Link copied!');
+    });
+}
+
+/* ===== FOLDER SHARE ===== */
+function shareFolderUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Folder link copied to clipboard!');
+    }).catch(() => {
+        showToast('Failed to copy link.', 'error');
+    });
+}
+
+function toggleQR() {
+    const panel = document.getElementById('qr-panel');
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+        const qrBox = document.getElementById('folder-qr-code');
+        const folderUrl = document.getElementById('folder-url')?.value;
+        if (qrBox && folderUrl && !qrBox.hasChildNodes() && typeof QRCode !== 'undefined') {
+            new QRCode(qrBox, { text: folderUrl, width: 160, height: 160, colorDark: '#166534', colorLight: '#ffffff' });
+        }
+    }
+}
+
+/* ===== FILE UPLOAD ===== */
+function initUpload() {
+    const dropzone = document.getElementById('upload-dropzone');
+    const fileInput = document.getElementById('file-input');
+    if (!dropzone || !fileInput) return;
+
+    // Click to upload
+    dropzone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) fileInput.click();
+    });
+
+    // Drag and drop
+    ['dragenter', 'dragover'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('drag-over'); });
+    });
+    dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length) handleFiles(files);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) handleFiles(fileInput.files);
+    });
+}
+
+async function handleFiles(files) {
+    const folderId = document.getElementById('folder-id')?.value;
+    if (!folderId) return;
+
+    // Validate on client side
+    const validFiles = [];
+    for (let i = 0; i < files.length && i < MAX_FILES_PER_UPLOAD; i++) {
+        const file = files[i];
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(ext)) {
+            showToast(`"${file.name}" is not a supported file type.`, 'error');
+            continue;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            showToast(`"${file.name}" exceeds the size limit.`, 'error');
+            continue;
+        }
+        validFiles.push(file);
+    }
+
+    if (!validFiles.length) return;
+
+    // Show progress UI
+    const progressArea = document.getElementById('upload-progress-area');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const progressText = document.getElementById('upload-progress-text');
+    const fileList = document.getElementById('upload-file-list');
+    const progressHeader = progressArea?.querySelector('h4');
+
+    if (progressArea) progressArea.style.display = 'block';
+    if (fileList) fileList.innerHTML = '';
+    if (progressBar) { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; }
+    if (progressText) progressText.textContent = '0%';
+
+    // Force reflow then enable smooth transition
+    progressBar?.offsetWidth;
+    if (progressBar) progressBar.style.transition = 'width 0.15s linear';
+
+    const totalFiles = validFiles.length;
+    const totalBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
+    let bytesUploadedPrev = 0; // bytes from completed files
+    let successCount = 0;
+    let failCount = 0;
+
+    // Upload files one by one for real-time progress
+    for (let i = 0; i < totalFiles; i++) {
+        const file = validFiles[i];
+        if (progressHeader) progressHeader.textContent = `Uploading ${i + 1} of ${totalFiles}...`;
+
+        // Add "uploading" item to file list
+        const item = document.createElement('div');
+        item.className = 'upload-file-item';
+        item.innerHTML = `<span>${file.name}</span><span class="file-status">⏳ Uploading...</span>`;
+        if (fileList) fileList.appendChild(item);
+
+        try {
+            const result = await uploadSingleFile(file, folderId, {
+                onProgress: (loaded, total) => {
+                    const overallLoaded = bytesUploadedPrev + loaded;
+                    const overallPct = totalBytes > 0 ? Math.min(Math.round((overallLoaded / totalBytes) * 100), 99) : 0;
+                    if (progressBar) progressBar.style.width = overallPct + '%';
+                    if (progressText) progressText.textContent = overallPct + '%';
+                }
+            });
+
+            if (result.success && result.results) {
+                result.results.forEach(r => {
+                    if (r.success && r.file) {
+                        addFileCard(r.file);
+                        successCount++;
+                        item.className = 'upload-file-item success';
+                        item.querySelector('.file-status').textContent = '✓ Uploaded';
+                    } else {
+                        failCount++;
+                        item.className = 'upload-file-item error';
+                        item.querySelector('.file-status').textContent = '✗ ' + (r.errors?.[0] || 'Failed');
+                    }
+                });
+                if (result.csrf_token) updateCSRF(result.csrf_token);
+            } else {
+                failCount++;
+                item.className = 'upload-file-item error';
+                item.querySelector('.file-status').textContent = '✗ ' + (result.errors?.[0] || 'Failed');
+                if (result.csrf_token) updateCSRF(result.csrf_token);
+            }
+        } catch (err) {
+            failCount++;
+            item.className = 'upload-file-item error';
+            item.querySelector('.file-status').textContent = '✗ Network error';
+        }
+
+        bytesUploadedPrev += file.size;
+    }
+
+    // Final state: 100%
+    if (progressBar) progressBar.style.width = '100%';
+    if (progressText) progressText.textContent = '100%';
+    if (progressHeader) progressHeader.textContent = 'Upload Complete';
+
+    if (successCount > 0) {
+        showToast(`${successCount} file${successCount > 1 ? 's' : ''} uploaded successfully!`);
+        const countEl = document.getElementById('file-count');
+        if (countEl) countEl.textContent = parseInt(countEl.textContent) + successCount;
+        const empty = document.getElementById('files-empty');
+        if (empty) empty.remove();
+    }
+    if (failCount > 0) {
+        showToast(`${failCount} file${failCount > 1 ? 's' : ''} failed to upload.`, 'error');
+    }
+
+    // Reset file input
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) fileInput.value = '';
+
+    // Hide progress after delay
+    setTimeout(() => {
+        if (progressArea) progressArea.style.display = 'none';
+    }, 4000);
+}
+
+/**
+ * Upload a single file via XHR with real-time progress callback
+ */
+function uploadSingleFile(file, folderId, { onProgress }) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('folder_id', folderId);
+        formData.append('csrf_token', getCSRF());
+        formData.append('files[]', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload');
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && onProgress) {
+                onProgress(e.loaded, e.total);
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+            } catch (e) {
+                reject(new Error('Invalid response'));
+            }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Network error')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+
+        xhr.send(formData);
+    });
+}
+
+function addFileCard(file) {
+    const grid = document.getElementById('files-grid');
+    if (!grid) return;
+
+    const card = document.createElement('div');
+    card.className = `file-card file-card-${file.category}`;
+    card.id = `file-${file.id}`;
+    card.innerHTML = `
+        <div class="file-card-icon">
+            <span class="file-type-badge">${file.extension.toUpperCase()}</span>
+        </div>
+        <div class="file-card-info">
+            <h4 class="file-name" title="${file.name}">${file.name}</h4>
+            <div class="file-meta">
+                <span class="file-size">${file.size}</span>
+                <span class="file-date">${file.uploaded_at}</span>
+            </div>
+        </div>
+        <div class="file-card-actions">
+            <a href="/api/download?id=${file.id}" class="btn btn-sm btn-download" title="Download">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </a>
+        </div>`;
+    grid.insertBefore(card, grid.firstChild);
+}
+
+/* ===== FOLDER HISTORY (localStorage) ===== */
+function initHistory() {
+    const grid = document.getElementById('history-grid');
+    if (!grid) return;
+    renderHistory();
+}
+
+function getHistory() {
+    try {
+        return JSON.parse(localStorage.getItem('fileflow_history') || '[]');
+    } catch { return []; }
+}
+
+function saveFolderToHistory(folder) {
+    let history = getHistory();
+    // Remove if exists
+    history = history.filter(h => h.slug !== folder.slug);
+    // Add to front
+    history.unshift({
+        name: folder.name,
+        slug: folder.slug,
+        url: folder.url,
+        created: new Date().toISOString()
+    });
+    // Keep max 20
+    history = history.slice(0, 20);
+    localStorage.setItem('fileflow_history', JSON.stringify(history));
+    renderHistory();
+}
+
+function removeFromHistory(slug) {
+    let history = getHistory();
+    history = history.filter(h => h.slug !== slug);
+    localStorage.setItem('fileflow_history', JSON.stringify(history));
+    renderHistory();
+    showToast('Removed from history.', 'info');
+}
+
+function renderHistory() {
+    const grid = document.getElementById('history-grid');
+    if (!grid) return;
+
+    const history = getHistory();
+    const empty = document.getElementById('history-empty');
+
+    if (history.length === 0) {
+        grid.innerHTML = '';
+        if (empty) grid.appendChild(empty);
+        return;
+    }
+
+    grid.innerHTML = history.map(h => `
+        <div class="history-card" onclick="window.location.href='/${h.slug}/'">
+            <div class="history-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="history-card-info">
+                <div class="history-card-name">${h.name}</div>
+                <div class="history-card-url">${h.url}</div>
+            </div>
+            <button class="history-card-remove" onclick="event.stopPropagation();removeFromHistory('${h.slug}')" title="Remove">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+/* ===== QR CODE INIT ===== */
+function initQR() {
+    // Auto-generate QR on folder page if panel exists
+    const folderUrl = document.getElementById('folder-url')?.value;
+    if (!folderUrl) return;
+    // QR will be generated on toggle click
+}
+
+/* ===== GLOBAL HELPERS ===== */
+window.scrollToCreate = scrollToCreate;
+window.copyFolderUrl = copyFolderUrl;
+window.resetCreateForm = resetCreateForm;
+window.shareFolderUrl = shareFolderUrl;
+window.toggleQR = toggleQR;
+window.removeFromHistory = removeFromHistory;
