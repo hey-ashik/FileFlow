@@ -132,6 +132,27 @@ function getFolderBySlug(string $slug): ?array {
     return $stmt->fetch() ?: null;
 }
 
+function incrementFolderVisits(int $folderId): void {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE folders SET visits = visits + 1 WHERE id = ?");
+        $stmt->execute([$folderId]);
+    } catch (PDOException $e) {
+        // If the 'visits' column doesn't exist yet (SQLSTATE 42S22), create it automatically and try again
+        if ($e->getCode() == '42S22') {
+            try {
+                $db->exec("ALTER TABLE `folders` ADD COLUMN `visits` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `total_size`");
+                $stmt = $db->prepare("UPDATE folders SET visits = visits + 1 WHERE id = ?");
+                $stmt->execute([$folderId]);
+            } catch (PDOException $e2) {
+                error_log("Failed to auto-create visits column: " . $e2->getMessage());
+            }
+        } else {
+            error_log("Failed to increment visits: " . $e->getMessage());
+        }
+    }
+}
+
 /**
  * Get files in a folder
  */

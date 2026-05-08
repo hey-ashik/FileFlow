@@ -158,6 +158,12 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+        
+        <!-- Visits Count -->
+        <div style="text-align: center; margin-top: 40px; color: var(--gray-400); font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            This folder has been visited <strong style="color: var(--gray-600);"><?php echo number_format($folder['visits'] ?? 0); ?></strong> times
+        </div>
     </div>
 </section>
 

@@ -38,23 +38,38 @@ switch (true) {
 
     // Auth pages
     case $path === '/login':
-        if (isLoggedIn()) { header('Location: /dashboard'); exit; }
+        if (isLoggedIn()) {
+            header('Location: /dashboard');
+            exit;
+        }
         require __DIR__ . '/pages/login.php';
         break;
     case $path === '/register':
-        if (isLoggedIn()) { header('Location: /dashboard'); exit; }
+        if (isLoggedIn()) {
+            header('Location: /dashboard');
+            exit;
+        }
         require __DIR__ . '/pages/register.php';
         break;
     case $path === '/forgot-password':
-        if (isLoggedIn()) { header('Location: /dashboard'); exit; }
+        if (isLoggedIn()) {
+            header('Location: /dashboard');
+            exit;
+        }
         require __DIR__ . '/pages/forgot-password.php';
         break;
     case $path === '/reset-password':
-        if (isLoggedIn()) { header('Location: /dashboard'); exit; }
+        if (isLoggedIn()) {
+            header('Location: /dashboard');
+            exit;
+        }
         require __DIR__ . '/pages/reset-password.php';
         break;
     case $path === '/dashboard':
-        if (!isLoggedIn()) { header('Location: /login'); exit; }
+        if (!isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
         require __DIR__ . '/pages/dashboard.php';
         break;
     case $path === '/logout':
@@ -110,6 +125,8 @@ switch (true) {
         }
         $folder = getFolderBySlug($slug);
         if ($folder) {
+            incrementFolderVisits($folder['id']);
+            $folder['visits'] = ($folder['visits'] ?? 0) + 1; // update local variable so it displays the incremented value
             require __DIR__ . '/pages/folder.php';
         } else {
             $errorType = 'not_found';

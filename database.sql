@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS `folders` (
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `total_files` INT UNSIGNED NOT NULL DEFAULT 0,
     `total_size` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    `visits` INT UNSIGNED NOT NULL DEFAULT 0,
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
     INDEX `idx_slug` (`slug`),
@@ -91,38 +92,3 @@ CREATE TABLE IF NOT EXISTS `csrf_tokens` (
     INDEX `idx_token` (`token`),
     INDEX `idx_expires` (`expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- 1. Create Users Table
-CREATE TABLE IF NOT EXISTS `users` (
-    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `full_name` VARCHAR(100) NOT NULL,
-    `email` VARCHAR(191) NOT NULL UNIQUE,
-    `password_hash` VARCHAR(255) NOT NULL,
-    `avatar_color` VARCHAR(7) NOT NULL DEFAULT '#16a34a',
-    `timezone` VARCHAR(64) DEFAULT 'UTC',
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `last_login` DATETIME DEFAULT NULL,
-    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
-    INDEX `idx_email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 2. Create Password Resets Table
-CREATE TABLE IF NOT EXISTS `password_resets` (
-    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT UNSIGNED NOT NULL,
-    `token` VARCHAR(64) NOT NULL UNIQUE,
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `expires_at` DATETIME NOT NULL,
-    `used` TINYINT(1) NOT NULL DEFAULT 0,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-    INDEX `idx_token` (`token`),
-    INDEX `idx_expires` (`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 3. Add user_id column to folders (if not exists)
--- Run this only if the column doesn't exist yet
-ALTER TABLE `folders` ADD COLUMN `user_id` INT UNSIGNED DEFAULT NULL AFTER `id`;
-ALTER TABLE `folders` ADD INDEX `idx_user` (`user_id`);
-ALTER TABLE `folders` ADD FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL;
