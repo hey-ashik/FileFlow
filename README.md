@@ -1,86 +1,103 @@
 <div align="center">
-  <img src="readme-thambnail.png" alt="FileFlow Thumbnail" style="width: 100%; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+  <img src="readme-thambnail.png" alt="FileFlow Banner" style="width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
 
-  <h1>🚀 FileFlow - Secure File Sharing Platform</h1>
-  
-  <p>A modern, fast, and secure PHP-based web application for effortless file sharing and personalized folder management.</p>
+  <br />
+
+  <h1>🚀 FileFlow</h1>
+  <p><strong>A High-Performance, Secure File Sharing & Management Ecosystem</strong></p>
 
   <p>
-    <a href="#features">Features</a> •
-    <a href="#tech-stack">Tech Stack</a> •
-    <a href="#installation">Installation</a> •
-    <a href="#developer">Developer</a>
+    <a href="#-key-highlights">Highlights</a> •
+    <a href="#-technical-prowess">Performance</a> •
+    <a href="#-features">Features</a> •
+    <a href="#-tech-stack">Tech Stack</a> •
+    <a href="#-developer">Developer</a>
   </p>
+
+  <img src="https://img.shields.io/badge/PHP-8.1+-777bb4?style=for-the-badge&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/JavaScript-ES6+-f7df1e?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Performance-Optimized-16a34a?style=for-the-badge" />
 </div>
 
 ---
 
 ## 🌟 Overview
-**FileFlow** is a comprehensive file-sharing platform that allows users to create custom, unique folder names (e.g., `fileflow.ashikone.com/my-folder/`) to instantly share files across the internet. It supports both anonymous usage via browser history and a complete multi-user authentication system with personalized dashboards and analytics.
+
+**FileFlow** is a modern, high-speed file-sharing platform designed for both simplicity and power. It allows users to create custom-named "Flow Folders" to share files instantly via professional, unique URLs. 
+
+Built with a focus on **User Experience (UX)** and **Lightning Speed**, FileFlow bridges the gap between traditional PHP applications and modern SPAs (Single Page Applications).
+
+---
+
+## ⚡ Key Highlights
+
+### 🚄 Instant "Next.js Style" Experience
+FileFlow features a custom-built **SPA Engine** that enables:
+*   **Zero-Reload Navigation:** Click through menus with instant content swapping.
+*   **Hover-Prefetching:** Pages are pre-loaded in the background as you hover over links, making transitions feel instantaneous.
+*   **Global Progress Bar:** A sleek green loader provides immediate visual feedback for all navigation actions.
+
+### 📊 Dynamic User Dashboard
+*   **Real-time Analytics:** Track folder visits, total storage, and file counts.
+*   **Folder History:** Local storage-backed history for anonymous users and server-side management for registered users.
+*   **Visual Insights:** Interactive charts showing upload trends and storage distribution.
+
+### 🛡️ Enterprise-Grade Security
+*   **CSRF Protection:** Integrated token validation for all state-changing requests.
+*   **Secure File Handling:** Multi-layer validation for file types, sizes, and dangerous content patterns.
+*   **Encrypted Authentication:** BCrypt-hashed passwords and secure session management.
+
+---
+
+## 🛠️ Technical Prowess
+
+We've optimized every layer of the application for maximum responsiveness:
+*   **Static Asset Caching:** Implemented static versioning for design assets to ensure instant browser rendering.
+*   **Database Setup Optimization:** Intelligent schema flags prevent redundant database maintenance checks, reducing server response time (TTFB).
+*   **SEO Optimized:** Semantic HTML5 structure with dynamic Meta and Open Graph tag management for social sharing.
 
 ---
 
 ## ✨ Features
 
-### 🛡️ Authentication & User Management
-* **Secure Login & Registration:** Fast and secure authentication system.
-* **Password Recovery:** Token-based forgot password and reset functionality.
-* **Personalized Dashboard:** A dynamic dashboard displaying total files, total storage used, and recent download counts.
-* **Data Visualization:** Real-time interactive bar charts showing upload activity over the last 7 days.
-
-### 📁 Core File Sharing
-* **Custom Shareable Links:** Create folders with unique names that instantly generate shareable public links.
-* **Smart History Tracking:** Automatically tracks and saves your created and visited folders so you never lose them.
-* **QR Code Generation:** Generate instant QR codes for quick mobile access and sharing.
-* **Drag-and-Drop Uploads:** Seamless file uploading experience with real-time progress bars.
-
-### 📄 Supported File Types
-FileFlow securely accepts the following file formats:
-* **Documents:** `PDF`, `DOCX`, `DOC`, `PPTX`, `PPT`, `XLSX`, `XLS`
-* **Media:** `MP3`, `JPG`, `JPEG`, `PNG`, `WEBP`
-* **Archives:** `ZIP`
+*   **📂 Custom Folders:** Create unique slugs (e.g., `/my-project`) for instant sharing.
+*   **📱 QR Code Integration:** Instant QR generation for every folder.
+*   **📤 Drag & Drop:** Modern upload interface with real-time progress tracking.
+*   **👤 Profile Cards:** Customizable user profile pages with social links and avatars.
+*   **👑 Admin Command Center:** Full oversight of users, folders, and platform-wide statistics.
+*   **🔄 Password Recovery:** Secure, token-based account recovery system.
 
 ---
 
-## 🛠️ Tech Stack
-* **Frontend:** HTML5, CSS3 (Custom Vanilla CSS, Responsive Design), Vanilla JavaScript (ES6+).
-* **Backend:** PHP 8+ (Core PHP, completely custom routing architecture).
-* **Database:** MySQL (PDO for secure, prepared statements).
-* **Security:** Built-in CSRF protection, secure file validation, XSS prevention, and strict `.htaccess` routing rules.
+## 💻 Tech Stack
+
+- **Backend:** PHP 8.1+ (Native, Clean Architecture)
+- **Frontend:** Vanilla JS (ES6+), CSS3 (Custom Design System), HTML5
+- **Database:** MySQL (PDO Implementation)
+- **Routing:** Advanced `.htaccess` URL Rewriting
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Installation
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/yourusername/fileflow.git
-   cd fileflow
-   ```
-
-2. **Database Configuration**
-   * Create a new MySQL database.
-   * Import the provided `database.sql` file into your MySQL database to set up the schemas (Users, Folders, Files, Password Resets).
-   * Update your database credentials in `config/database.php`.
-
-3. **Environment Setup**
-   * Update the `APP_URL` in `config/config.php` to match your local or live domain.
-   * Ensure that your web server (Apache/Nginx) has `mod_rewrite` enabled for the `.htaccess` rules to route cleanly to `index.php`.
-   * Ensure the `user_documents` folder has the proper read/write permissions for file uploads.
-
-4. **Launch**
-   * Start your local server (e.g., XAMPP, Laragon, or MAMP) and visit the configured domain.
+1. **Clone & Extract:** `git clone https://github.com/your-repo/fileflow.git`
+2. **Database:** Create a MySQL DB and import `database.sql`.
+3. **Config:** Update `config/database.php` and `config/config.php` (set your `APP_URL`).
+4. **Permissions:** Ensure `user_documents` and `uploads` are writable.
 
 ---
 
 ## 👨‍💻 Developer
 
-Developed with ❤️ by **[Ashikul Islam](https://wa.me/8801792250709)**.
+Built with passion and precision by **Ashikul Islam**.
 
-Have questions, feedback, or need a custom web solution? 
-👉 **[Click here to chat with me on WhatsApp!](https://wa.me/8801792250709)**
+| Contact Channel | Link |
+| :--- | :--- |
+| **WhatsApp** | [01792250709](https://wa.me/8801792250709) |
+| **Portfolio** | [ashikone.com](https://ashikone.com) |
 
-<br>
+---
+
 <div align="center">
-  <sub>© 2026 FileFlow. All rights reserved.</sub>
+  <sub>&copy; 2026 FileFlow Platform. Designed for Speed & Security.</sub>
 </div>
