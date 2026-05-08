@@ -145,6 +145,9 @@ switch (true) {
     case preg_match('#^/api/admin/delete-all-folders$#', $path):
         require __DIR__ . '/api/admin-delete-all.php';
         break;
+    case preg_match('#^/api/admin/delete-profile-card$#', $path):
+        require __DIR__ . '/api/admin-delete-profile-card.php';
+        break;
         
     case preg_match('#^/api/user/delete-folder$#', $path):
         require __DIR__ . '/api/user-delete-folder.php';
