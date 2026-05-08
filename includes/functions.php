@@ -14,6 +14,9 @@ function setupAdminAndSchema(): void {
     if ($setupDone) return;
     $setupDone = true;
 
+    // Performance Optimization: Prevent heavy database checks on every request
+    if (file_exists(__DIR__ . '/../.db_optimized')) return;
+
     try {
         $db = getDB();
         
@@ -70,6 +73,9 @@ function setupAdminAndSchema(): void {
             // Ensure they are admin
             $db->prepare("UPDATE users SET is_admin = 1 WHERE id = ?")->execute([$user['id']]);
         }
+
+        // Mark setup as complete to improve performance on next loads
+        file_put_contents(__DIR__ . '/../.db_optimized', date('Y-m-d H:i:s'));
     } catch (PDOException $e) {
         error_log("Setup error: " . $e->getMessage());
     }
