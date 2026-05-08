@@ -100,7 +100,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 class="prefix-url"><?php echo str_replace(['https://', 'http://'], '', APP_URL); ?>/</span>
                         </div>
                         <input type="text" id="folder-name-input" name="folder_name" class="input-field"
-                            placeholder="my-awesome-folder" maxlength="<?php echo FOLDER_NAME_MAX_LENGTH; ?>"
+                            placeholder="folder-name" maxlength="<?php echo FOLDER_NAME_MAX_LENGTH; ?>"
                             pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*" required autocomplete="off">
                         <button type="submit" class="btn btn-primary btn-create" id="btn-create-folder">
                             <span class="btn-text">Create</span>
@@ -113,14 +113,9 @@ require_once __DIR__ . '/../includes/header.php';
                         </button>
                     </div>
                     <div class="input-hint" id="folder-hint">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 16v-4" />
-                            <path d="M12 8h.01" />
-                        </svg>
+
                         Use letters, numbers, hyphens, or underscores. Min <?php echo FOLDER_NAME_MIN_LENGTH; ?>
-                        characters.
+                        characters
                     </div>
                 </form>
 
