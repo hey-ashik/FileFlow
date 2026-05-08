@@ -90,6 +90,34 @@ if (!empty($user['profile_slug'])) {
             <input type="hidden" id="social_links" name="social_links" value="<?php echo htmlspecialchars($user['social_links'] ?? '[]'); ?>">
         </div>
 
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 2rem;">My CV</h2>
+        
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Upload CV (PDF or DOCX)</label>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('cv-input').click()">Select CV File</button>
+                <?php if (!empty($user['cv_path'])): ?>
+                    <a id="view-cv-btn" href="<?php echo htmlspecialchars($user['cv_path']); ?>" target="_blank" class="btn btn-primary" style="background-color: #0ea5e9; text-decoration: none;">View Current CV</a>
+                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()">Remove CV</button>
+                <?php else: ?>
+                    <a id="view-cv-btn" href="#" target="_blank" class="btn btn-primary" style="background-color: #0ea5e9; text-decoration: none; display: none;">View Current CV</a>
+                    <button type="button" id="remove-cv-btn" class="btn btn-danger" onclick="removeCV()" style="display: none;">Remove CV</button>
+                <?php endif; ?>
+                <span id="cv-upload-status" style="font-size: 0.875rem; color: #64748b;"></span>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">CV Description (Optional)</label>
+            <textarea id="cv_description" name="cv_description" rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; resize: vertical;" placeholder="E.g., Download my full resume to learn more details about my experience."><?php echo htmlspecialchars($user['cv_description'] ?? ''); ?></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">CV Button Color</label>
+            <input type="color" id="cv_button_color" name="cv_button_color" value="<?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>" style="height: 40px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; padding: 2px;">
+        </div>
+
         <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 2rem;">Public Profile Card</h2>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -288,6 +316,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Handle CV Upload
+    const cvInput = document.getElementById('cv-input');
+    const cvUploadStatus = document.getElementById('cv-upload-status');
+    if (cvInput) {
+        cvInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('CV size must be less than 5MB', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'upload_cv');
+            formData.append('cv_file', file);
+            formData.append('csrf_token', document.getElementById('csrf-token').value);
+            
+            showToast('Uploading CV...', 'info');
+            if(cvUploadStatus) cvUploadStatus.textContent = 'Uploading...';
+            
+            try {
+                const response = await fetch('/api/profile', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('CV uploaded successfully', 'success');
+                    if(cvUploadStatus) cvUploadStatus.textContent = 'Uploaded successfully!';
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                    if(cvUploadStatus) cvUploadStatus.textContent = '';
+                }
+            } catch (error) {
+                showToast('An error occurred during upload', 'error');
+                if(cvUploadStatus) cvUploadStatus.textContent = '';
+            }
+        });
+    }
+
     // Handle Cover Upload
     const coverInput = document.getElementById('cover-input');
     coverInput.addEventListener('change', async (e) => {
@@ -434,6 +502,27 @@ async function removeCover() {
         
         if (data.success) {
             showToast('Cover removed successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+        }
+    } catch (error) {
+        showToast('An error occurred while removing', 'error');
+    }
+}
+async function removeCV() {
+    if (!confirm('Are you sure you want to remove your CV?')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'remove_cv');
+    formData.append('csrf_token', document.getElementById('csrf-token').value);
+    
+    try {
+        const response = await fetch('/api/profile', { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('CV removed successfully', 'success');
             setTimeout(() => window.location.reload(), 1000);
         } else {
             showToast(data.message, 'error');

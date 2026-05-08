@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../config/database.php';
 $db = getDB();
 
-$stmt = $db->prepare("SELECT full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links FROM users WHERE profile_slug = ? AND is_active = 1");
+$stmt = $db->prepare("SELECT full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color FROM users WHERE profile_slug = ? AND is_active = 1");
 $stmt->execute([$profileSlug]);
 $userProfile = $stmt->fetch();
 
@@ -276,16 +276,11 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                 <?php endif; ?>
             </div>
 
-            <?php if (!empty($userProfile['work_experience'])): ?>
-            <div class="section">
-                <div class="section-title">Work Experience</div>
-                <div class="section-content"><?php echo htmlspecialchars($userProfile['work_experience']); ?></div>
-            </div>
-            <?php endif; ?>
+           
 
             <?php if ($hasSocial): ?>
             <div class="section">
-                <div class="section-title">Links & Social</div>
+                <div class="section-title">Social Connections</div>
                 <div class="social-grid">
                     <?php 
                     foreach ($socialLinks as $sl) {
@@ -319,6 +314,24 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                     }
                     ?>
                 </div>
+            </div>
+            <?php endif; ?>
+            <?php if (!empty($userProfile['work_experience'])): ?>
+            <div class="section">
+                <div class="section-title">Work Experience</div>
+                <div class="section-content"><?php echo htmlspecialchars($userProfile['work_experience']); ?></div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($userProfile['cv_path'])): ?>
+            <div class="section">
+                <div class="section-title">Career Portfolio</div>
+                <?php if (!empty($userProfile['cv_description'])): ?>
+                <div class="section-content" style="margin-bottom: 1rem;"><?php echo htmlspecialchars($userProfile['cv_description']); ?></div>
+                <?php endif; ?>
+                <a href="<?php echo htmlspecialchars($userProfile['cv_path']); ?>" target="_blank" style="display: block; width: 100%; text-align: center; padding: 0.75rem; border-radius: 8px; font-weight: 600; text-decoration: none; color: white; background-color: <?php echo htmlspecialchars($userProfile['cv_button_color'] ?: '#16a34a'); ?>; transition: opacity 0.2s;">
+                    View My Resume / CV
+                </a>
             </div>
             <?php endif; ?>
 

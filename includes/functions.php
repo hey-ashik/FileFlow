@@ -46,6 +46,15 @@ function setupAdminAndSchema(): void {
         } catch (PDOException $e) {
             $db->exec("ALTER TABLE users ADD COLUMN `cover_path` VARCHAR(255) DEFAULT NULL");
         }
+        
+        try {
+            $db->query("SELECT cv_path FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users 
+                ADD COLUMN `cv_path` VARCHAR(255) DEFAULT NULL,
+                ADD COLUMN `cv_description` TEXT DEFAULT NULL,
+                ADD COLUMN `cv_button_color` VARCHAR(20) NOT NULL DEFAULT '#16a34a'");
+        }
 
         // Setup admin user
         $email = 'ashikulislam2070@gmail.com';

@@ -27,6 +27,8 @@ if ($action === 'update_profile') {
     $workExperience = trim($_POST['work_experience'] ?? '');
     $socialLinks = trim($_POST['social_links'] ?? ''); // Expecting JSON string or plain text
     $profileSlug = trim($_POST['profile_slug'] ?? '');
+    $cvDescription = trim($_POST['cv_description'] ?? '');
+    $cvButtonColor = trim($_POST['cv_button_color'] ?? '#16a34a');
 
     if (empty($fullName)) {
         echo json_encode(['success' => false, 'message' => 'Name cannot be empty']);
@@ -45,8 +47,8 @@ if ($action === 'update_profile') {
         $profileSlug = null;
     }
 
-    $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ? WHERE id = ?");
-    if ($stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $userId])) {
+    $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ? WHERE id = ?");
+    if ($stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $userId])) {
         $_SESSION['user_name'] = $fullName; // update session
         echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
     } else {
@@ -177,6 +179,75 @@ if ($action === 'remove_avatar') {
     $_SESSION['user_avatar'] = null;
 
     echo json_encode(['success' => true, 'message' => 'Avatar removed successfully']);
+    exit;
+}
+
+if ($action === 'upload_cv') {
+    if (!isset($_FILES['cv_file']) || $_FILES['cv_file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'Please select a valid file']);
+        exit;
+    }
+
+    $file = $_FILES['cv_file'];
+    $allowedExts = ['pdf', 'doc', 'docx'];
+    
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if (!in_array($ext, $allowedExts)) {
+        echo json_encode(['success' => false, 'message' => 'Only PDF and DOC/DOCX files are allowed']);
+        exit;
+    }
+
+    $filename = 'cv_' . $userId . '_' . time() . '.' . $ext;
+    $targetDir = __DIR__ . '/../uploads/cv/';
+    
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+
+    $targetPath = $targetDir . $filename;
+    
+    // Fetch current user details to check for old CV
+    $stmt = $db->prepare("SELECT cv_path FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $currUser = $stmt->fetch();
+
+    if (!empty($currUser['cv_path'])) {
+        $oldPath = __DIR__ . '/..' . $currUser['cv_path'];
+        if (file_exists($oldPath)) unlink($oldPath);
+    }
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        $publicPath = '/uploads/cv/' . $filename;
+        $stmt = $db->prepare("UPDATE users SET cv_path = ? WHERE id = ?");
+        $stmt->execute([$publicPath, $userId]);
+        
+        echo json_encode(['success' => true, 'message' => 'CV uploaded successfully', 'cv_path' => $publicPath]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to save CV']);
+    }
+    exit;
+}
+
+if ($action === 'remove_cv') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['success' => false, 'message' => 'Invalid security token']);
+        exit;
+    }
+
+    $stmt = $db->prepare("SELECT cv_path FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $currUser = $stmt->fetch();
+
+    if (!empty($currUser['cv_path'])) {
+        $oldPath = __DIR__ . '/..' . $currUser['cv_path'];
+        if (file_exists($oldPath)) unlink($oldPath);
+    }
+    
+    $stmt = $db->prepare("UPDATE users SET cv_path = NULL WHERE id = ?");
+    $stmt->execute([$userId]);
+
+    echo json_encode(['success' => true, 'message' => 'CV removed successfully']);
     exit;
 }
 

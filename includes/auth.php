@@ -122,6 +122,9 @@ function getCurrentUser(): ?array {
         'phone' => $user['phone'] ?? null,
         'work_experience' => $user['work_experience'] ?? null,
         'social_links' => $user['social_links'] ?? null,
+        'cv_path' => $user['cv_path'] ?? null,
+        'cv_description' => $user['cv_description'] ?? null,
+        'cv_button_color' => $user['cv_button_color'] ?? '#16a34a',
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
         'is_admin' => $_SESSION['is_admin'] ?? false
     ];
