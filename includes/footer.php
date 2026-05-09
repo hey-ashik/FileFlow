@@ -5,19 +5,19 @@
     <div class="footer-inner">
         <div class="footer-brand">
             <a href="/" class="footer-logo">
-                <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
-                    <rect width="32" height="32" rx="8" fill="url(#grad2)" />
-                    <path d="M10 20L16 8L22 20" stroke="white" stroke-width="2.5" stroke-linecap="round"
-                        stroke-linejoin="round" />
-                    <path d="M12 16H20" stroke="white" stroke-width="2.5" stroke-linecap="round" />
-                    <path d="M16 20V24" stroke="white" stroke-width="2.5" stroke-linecap="round" />
-                    <defs>
-                        <linearGradient id="grad2" x1="0" y1="0" x2="32" y2="32">
-                            <stop stop-color="#16a34a" />
-                            <stop offset="1" stop-color="#059669" />
-                        </linearGradient>
-                    </defs>
-                </svg>
+                <!--<svg width="24" height="24" viewBox="0 0 32 32" fill="none">-->
+                <!--    <rect width="32" height="32" rx="8" fill="url(#grad2)" />-->
+                <!--    <path d="M10 20L16 8L22 20" stroke="white" stroke-width="2.5" stroke-linecap="round"-->
+                <!--        stroke-linejoin="round" />-->
+                <!--    <path d="M12 16H20" stroke="white" stroke-width="2.5" stroke-linecap="round" />-->
+                <!--    <path d="M16 20V24" stroke="white" stroke-width="2.5" stroke-linecap="round" />-->
+                <!--    <defs>-->
+                <!--        <linearGradient id="grad2" x1="0" y1="0" x2="32" y2="32">-->
+                <!--            <stop stop-color="#16a34a" />-->
+                <!--            <stop offset="1" stop-color="#059669" />-->
+                <!--        </linearGradient>-->
+                <!--    </defs>-->
+                <!--</svg>-->
                 <span>File<span class="brand-accent">Flow</span></span>
             </a>
             <p class="footer-desc">Secure and simple file sharing. No registration required.</p>
@@ -111,7 +111,7 @@
         btnOk.addEventListener('click', handleOk);
     };
 </script>
-<script src="/assets/js/app.js?v=<?php echo $ver; ?>"></script>
+<script src="/assets/js/app.js?v=3.1.3"></script>
 </body>
 
 </html>
