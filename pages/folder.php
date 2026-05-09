@@ -202,7 +202,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="file-card-actions">
                             <a href="/api/download?id=<?php echo $file['id']; ?>" class="btn btn-sm btn-download"
-                                title="Download" id="btn-download-<?php echo $file['id']; ?>">
+                                title="Download" id="btn-download-<?php echo $file['id']; ?>" download>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -242,6 +242,7 @@ require_once __DIR__ . '/../includes/header.php';
 <input type="hidden" id="folder-id" value="<?php echo $folder['id']; ?>">
 <input type="hidden" id="folder-slug" value="<?php echo htmlspecialchars($folder['slug']); ?>">
 <input type="hidden" id="folder-url" value="<?php echo $folderUrl; ?>">
+<input type="hidden" id="is-owner" value="<?php echo (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']) ? '1' : '0'; ?>">
 
 <script>
     async function deleteFile(fileId) {
@@ -256,9 +257,28 @@ require_once __DIR__ . '/../includes/header.php';
                 try {
                     const res = await fetch('/api/delete-file', { method: 'POST', body: formData });
                     const data = await res.json();
+                    
+                    if (data.csrf_token) updateCSRF(data.csrf_token);
+                    
                     if (data.success) {
                         showToast('File deleted successfully.');
-                        setTimeout(() => location.reload(), 1000);
+                        const fileCard = document.getElementById(`file-${fileId}`);
+                        if (fileCard) {
+                            fileCard.style.opacity = '0';
+                            fileCard.style.transform = 'scale(0.9)';
+                            fileCard.style.transition = 'all 0.3s ease';
+                            setTimeout(() => {
+                                fileCard.remove();
+                                // Update file count
+                                const countEl = document.getElementById('file-count');
+                                if (countEl) {
+                                    const current = parseInt(countEl.textContent);
+                                    countEl.textContent = Math.max(0, current - 1);
+                                }
+                            }, 300);
+                        } else {
+                            setTimeout(() => location.reload(), 1000);
+                        }
                     } else {
                         showToast(data.errors?.[0] || 'Delete failed', 'error');
                     }

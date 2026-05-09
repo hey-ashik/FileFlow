@@ -49,12 +49,16 @@ function initSpaNavigation() {
         const link = e.target.closest('a');
         if (!link || !link.href) return;
 
+        // If it's a download link, let the browser handle it naturally
+        if (link.hasAttribute('download')) return;
+
         const url = new URL(link.href);
         const isInternal = url.origin === window.location.origin;
         const isSelf = link.getAttribute('target') === '_self' || !link.getAttribute('target');
-        const isNotSpecial = !link.getAttribute('download') && !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:') && !link.href.includes('/logout');
+        const isNotSpecial = !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:') && !link.href.includes('/logout');
+        const isApi = url.pathname.startsWith('/api/');
 
-        if (isInternal && isSelf && isNotSpecial) {
+        if (isInternal && isSelf && isNotSpecial && !isApi) {
             e.preventDefault();
             if (window.location.href === link.href) return;
             handleSpaLink(link.href);
@@ -65,9 +69,14 @@ function initSpaNavigation() {
     document.addEventListener('mouseover', (e) => {
         const link = e.target.closest('a');
         if (!link || !link.href) return;
+        if (link.hasAttribute('download')) return;
 
         const url = new URL(link.href);
-        if (url.origin === window.location.origin && !spaCache.has(link.href)) {
+        const isInternal = url.origin === window.location.origin;
+        const isNotSpecial = !link.href.includes('#') && !link.href.includes('/logout');
+        const isApi = url.pathname.startsWith('/api/');
+
+        if (isInternal && isNotSpecial && !isApi && !spaCache.has(link.href)) {
             prefetchSpaLink(link.href);
         }
     });
@@ -594,6 +603,14 @@ function addFileCard(file) {
     const card = document.createElement('div');
     card.className = `file-card file-card-${file.category}`;
     card.id = `file-${file.id}`;
+    const isOwner = document.getElementById('is-owner')?.value === '1';
+    const deleteBtn = isOwner ? `
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteFile(${file.id})" title="Delete File" style="padding: 0.5rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+        </button>` : '';
+
     card.innerHTML = `
         <div class="file-card-icon">
             <span class="file-type-badge">${file.extension.toUpperCase()}</span>
@@ -606,9 +623,10 @@ function addFileCard(file) {
             </div>
         </div>
         <div class="file-card-actions">
-            <a href="/api/download?id=${file.id}" class="btn btn-sm btn-download" title="Download">
+            <a href="/api/download?id=${file.id}" class="btn btn-sm btn-download" title="Download" id="btn-download-${file.id}" download>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </a>
+            ${deleteBtn}
         </div>`;
     grid.insertBefore(card, grid.firstChild);
 }
