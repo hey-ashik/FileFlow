@@ -52,7 +52,7 @@ function initSpaNavigation() {
         const url = new URL(link.href);
         const isInternal = url.origin === window.location.origin;
         const isSelf = link.getAttribute('target') === '_self' || !link.getAttribute('target');
-        const isNotSpecial = !link.getAttribute('download') && !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:');
+        const isNotSpecial = !link.getAttribute('download') && !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:') && !link.href.includes('/logout');
 
         if (isInternal && isSelf && isNotSpecial) {
             e.preventDefault();
