@@ -33,7 +33,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <meta property="og:url" content="<?php echo APP_URL; ?>">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.png">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

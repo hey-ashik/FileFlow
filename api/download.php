@@ -51,5 +51,8 @@ header('Expires: 0');
 header('X-Content-Type-Options: nosniff');
 
 // Output file
+if (session_status() !== PHP_SESSION_NONE) {
+    session_write_close();
+}
 readfile($filePath);
 exit;

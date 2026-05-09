@@ -15,7 +15,8 @@ function setupAdminAndSchema(): void {
     $setupDone = true;
 
     // Performance Optimization: Prevent heavy database checks on every request
-    if (file_exists(__DIR__ . '/../.db_optimized')) return;
+    $lockFile = UPLOAD_DIR . '.db_optimized';
+    if (file_exists($lockFile)) return;
 
     try {
         $db = getDB();
@@ -75,7 +76,7 @@ function setupAdminAndSchema(): void {
         }
 
         // Mark setup as complete to improve performance on next loads
-        file_put_contents(__DIR__ . '/../.db_optimized', date('Y-m-d H:i:s'));
+        @file_put_contents(UPLOAD_DIR . '.db_optimized', date('Y-m-d H:i:s'));
     } catch (PDOException $e) {
         error_log("Setup error: " . $e->getMessage());
     }
@@ -288,11 +289,13 @@ function generateCSRFToken(): string {
         session_start();
     }
     
-    $token = bin2hex(random_bytes(32));
-    $_SESSION['csrf_token'] = $token;
-    $_SESSION['csrf_token_time'] = time();
+    if (empty($_SESSION['csrf_token']) || empty($_SESSION['csrf_token_time']) || (time() - $_SESSION['csrf_token_time'] > CSRF_TOKEN_EXPIRY)) {
+        $token = bin2hex(random_bytes(32));
+        $_SESSION['csrf_token'] = $token;
+        $_SESSION['csrf_token_time'] = time();
+    }
     
-    return $token;
+    return $_SESSION['csrf_token'];
 }
 
 /**

@@ -41,7 +41,9 @@ function getDB(): PDO
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
-            throw new PDOException("Database connection failed. Please check configuration.");
+            header("HTTP/1.1 503 Service Unavailable");
+            echo "A database connection error occurred. Please try again later.";
+            exit;
         }
     }
 

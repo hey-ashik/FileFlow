@@ -24,6 +24,9 @@ if ($folderId <= 0) {
     jsonResponse(['success' => false, 'errors' => ['Invalid folder.']], 400);
 }
 
+// Session is authenticated and CSRF verified. Close session to prevent blocking other requests.
+session_write_close();
+
 // Verify folder exists
 $db = getDB();
 $stmt = $db->prepare("SELECT id, slug, user_id FROM folders WHERE id = ? AND is_active = 1");
