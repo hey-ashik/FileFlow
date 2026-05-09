@@ -16,7 +16,7 @@ function initGlobal() {
     if (isGlobalInitDone) return;
     initNavbar();
     initUserDropdown();
-    
+
     // Prevent accidental navigation during uploads
     window.addEventListener('beforeunload', (e) => {
         if (isUploading) {
@@ -43,17 +43,17 @@ const spaCache = new Map();
 
 function initSpaNavigation() {
     const loader = document.getElementById('spa-loader-fill');
-    
+
     // Intercept all internal link clicks
     document.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link || !link.href) return;
-        
+
         const url = new URL(link.href);
         const isInternal = url.origin === window.location.origin;
         const isSelf = link.getAttribute('target') === '_self' || !link.getAttribute('target');
         const isNotSpecial = !link.getAttribute('download') && !link.href.includes('#') && !link.href.startsWith('mailto:') && !link.href.startsWith('tel:');
-        
+
         if (isInternal && isSelf && isNotSpecial) {
             e.preventDefault();
             if (window.location.href === link.href) return;
@@ -65,7 +65,7 @@ function initSpaNavigation() {
     document.addEventListener('mouseover', (e) => {
         const link = e.target.closest('a');
         if (!link || !link.href) return;
-        
+
         const url = new URL(link.href);
         if (url.origin === window.location.origin && !spaCache.has(link.href)) {
             prefetchSpaLink(link.href);
@@ -85,7 +85,7 @@ async function prefetchSpaLink(url) {
             const html = await response.text();
             spaCache.set(url, html);
         }
-    } catch (err) {}
+    } catch (err) { }
 }
 
 async function handleSpaLink(url, push = true) {
@@ -106,19 +106,19 @@ async function handleSpaLink(url, push = true) {
             if (!response.ok) throw new Error('Failed to load page');
             html = await response.text();
         }
-        
+
         if (loader) loader.style.width = '70%';
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        
+
         // Update Title and Content
         document.title = doc.title;
         const newContent = doc.querySelector('.main-content');
         const currentContent = document.querySelector('.main-content');
-        
+
         if (newContent && currentContent) {
             currentContent.innerHTML = newContent.innerHTML;
-            
+
             // Execute scripts inside new content
             const scripts = currentContent.querySelectorAll('script');
             scripts.forEach(oldScript => {
@@ -127,19 +127,19 @@ async function handleSpaLink(url, push = true) {
                 newScript.appendChild(document.createTextNode(oldScript.innerHTML));
                 oldScript.parentNode.replaceChild(newScript, oldScript);
             });
-            
+
             // Update Body Classes (Home vs Inner)
             document.body.className = doc.body.className;
-            
+
             // Update Navbar Active States
             updateNavbarActive(url);
-            
+
             // Update URL
             if (push) history.pushState({}, '', url);
-            
+
             // Re-initialize scripts for new content
             initApp();
-            
+
             // Scroll to top
             window.scrollTo(0, 0);
         }
@@ -457,13 +457,13 @@ async function handleFiles(files) {
                 const overallPct = totalBytes > 0 ? Math.min(Math.round((loaded / total) * 100), 99) : 0;
                 if (progressBar) progressBar.style.width = overallPct + '%';
                 if (progressText) progressText.textContent = overallPct + '%';
-                
+
                 const timeElapsed = (Date.now() - startTime) / 1000;
                 if (timeElapsed > 0.5 && loaded > 0) {
                     const speedBps = loaded / timeElapsed;
                     const bytesRemaining = total - loaded;
                     const timeRemainingSec = Math.max(0, bytesRemaining / speedBps);
-                    
+
                     let timeStr = "";
                     if (timeRemainingSec >= 3600) {
                         timeStr = Math.floor(timeRemainingSec / 3600) + "h " + Math.floor((timeRemainingSec % 3600) / 60) + "m";
@@ -472,16 +472,16 @@ async function handleFiles(files) {
                     } else {
                         timeStr = Math.floor(timeRemainingSec) + "s";
                     }
-                    
+
                     fileItems.forEach(item => {
                         if (item.className === 'upload-file-item') {
-                             item.querySelector('.file-status').textContent = `Uploading... ${overallPct}% (${timeStr} remaining)`;
+                            item.querySelector('.file-status').textContent = `Uploading... ${overallPct}% (${timeStr} remaining)`;
                         }
                     });
                 } else {
                     fileItems.forEach(item => {
                         if (item.className === 'upload-file-item') {
-                             item.querySelector('.file-status').textContent = `Uploading... ${overallPct}%`;
+                            item.querySelector('.file-status').textContent = `Uploading... ${overallPct}%`;
                         }
                     });
                 }
@@ -543,7 +543,7 @@ async function handleFiles(files) {
     // Reset file input
     const fileInput = document.getElementById('file-input');
     if (fileInput) fileInput.value = '';
-    
+
     isUploading = false;
 
     // Hide progress after delay
