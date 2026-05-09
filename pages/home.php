@@ -155,6 +155,31 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </section>
 
+<!-- Recent Folders / History Section -->
+<section class="section history-section" id="history-section">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-badge">Quick Access</span>
+            <h2 class="section-title">Your Recent Folders</h2>
+            <p class="section-subtitle">Folders you've created are saved locally for easy access.</p>
+        </div>
+
+        <div class="history-grid" id="history-grid">
+            <!-- Populated by JavaScript from localStorage -->
+            <div class="history-empty" id="history-empty">
+                <div class="history-empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    </svg>
+                </div>
+                <h3>No folders yet</h3>
+                <p>Create your first folder above and it will appear here.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Features Section -->
 <section class="section features-section" id="features-section">
     <div class="container">
@@ -330,30 +355,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </section>
 
-<!-- Recent Folders / History Section -->
-<section class="section history-section" id="history-section">
-    <div class="container">
-        <div class="section-header">
-            <span class="section-badge">Quick Access</span>
-            <h2 class="section-title">Your Recent Folders</h2>
-            <p class="section-subtitle">Folders you've created are saved locally for easy access.</p>
-        </div>
 
-        <div class="history-grid" id="history-grid">
-            <!-- Populated by JavaScript from localStorage -->
-            <div class="history-empty" id="history-empty">
-                <div class="history-empty-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.5">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                    </svg>
-                </div>
-                <h3>No folders yet</h3>
-                <p>Create your first folder above and it will appear here.</p>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- CTA Section -->
 <section class="section cta-section" id="cta-section">
