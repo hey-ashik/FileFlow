@@ -26,9 +26,12 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="dash-header">
             <div class="dash-welcome">
                 <div style="display:flex; align-items:center; gap: 16px; flex-wrap:wrap;">
-                    <h1 style="margin:0;">Welcome back, <span class="gradient-text"><?php echo htmlspecialchars($user['name']); ?></span></h1>
-                    <button onclick="location.reload()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.85rem; border-radius:100px; display:inline-flex; align-items:center; gap:6px; height:auto; background:var(--white);">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <h1 style="margin:0;">Welcome back, <span
+                            class="gradient-text"><?php echo htmlspecialchars($user['name']); ?></span></h1>
+                    <button onclick="location.reload()" class="btn btn-outline"
+                        style="padding: 6px 14px; font-size: 0.85rem; border-radius:100px; display:inline-flex; align-items:center; gap:6px; height:auto; background:var(--white);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <polyline points="23 4 23 10 17 10"></polyline>
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
@@ -163,14 +166,42 @@ require_once __DIR__ . '/../includes/header.php';
                     style="box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%;">
                     <div class="create-card-inner">
                         <form id="create-folder-form" class="create-form" autocomplete="off" style="margin-top: 0;">
+                            <!-- Anti-Autofill Honeypot -->
+                            <input type="text" name="email" style="display:none" aria-hidden="true">
+                            <input type="password" name="password" style="display:none" aria-hidden="true">
+
+                            <!-- Mode Selector -->
+                            <div style="display: flex; justify-content: flex-start; margin-bottom: 1.5rem;">
+                                <div class="mode-selector">
+                                    <button type="button" class="mode-btn active" id="mode-normal"
+                                        onclick="setCreateMode('normal')">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" style="margin-right: 6px;">
+                                            <path
+                                                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                        </svg>
+                                        Normal
+                                    </button>
+                                    <button type="button" class="mode-btn" id="mode-advanced"
+                                        onclick="setCreateMode('advanced')">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2.5" style="margin-right: 6px;">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
+                                        Advanced
+                                        <!--<span class="mode-badge">SECURE</span>-->
+                                    </button>
+                                </div>
+                            </div>
                             <div class="input-group">
                                 <div class="input-prefix">
                                     <span
                                         class="prefix-url"><?php echo str_replace(['https://', 'http://'], '', APP_URL); ?>/</span>
                                 </div>
-                                <input type="text" id="folder-name-input" name="folder_name" class="input-field"
+                                <input type="text" id="fld_slug_box" name="fld_slug_val" class="input-field"
                                     placeholder="folder-name" maxlength="<?php echo FOLDER_NAME_MAX_LENGTH; ?>"
-                                    pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*" required autocomplete="off">
+                                    pattern="[a-zA-Z0-9][a-zA-Z0-9\-_]*" required autocomplete="off"
+                                    data-lpignore="true" data-form-type="other">
                                 <button type="submit" class="btn btn-primary btn-create" id="btn-create-folder">
                                     <span class="btn-text">Create</span>
                                     <span class="btn-loader" style="display:none;">
@@ -182,9 +213,54 @@ require_once __DIR__ . '/../includes/header.php';
                                 </button>
                             </div>
                             <div class="input-hint" id="folder-hint"
-                                style="text-align: left; justify-content: flex-start; margin-top: 8px;">
+                                style="text-align: left; justify-content: flex-start; margin-top: 8px; margin-bottom: 1.5rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" style="margin-right:4px;">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 16v-4" />
+                                    <path d="M12 8h.01" />
+                                </svg>
                                 Use letters, numbers, hyphens, or underscores. Min <?php echo FOLDER_NAME_MIN_LENGTH; ?>
                                 characters
+                            </div>
+
+                            <div id="advanced-options-fields" class="advanced-options-container" style="display:none;">
+                                <div class="advanced-options-header">
+                                    <!--<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>-->
+                                    <!--ADVANCED SETTINGS-->
+                                </div>
+                                <div class="advanced-fields-row">
+                                    <div class="advanced-field-group">
+                                        <label for="folder-password">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2.5">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                            </svg>
+                                            Set Password (Optional)
+                                        </label>
+                                        <input type="password" id="folder-password" name="password"
+                                            class="advanced-field-input" placeholder="••••••••">
+                                    </div>
+                                    <div class="advanced-field-group">
+                                        <label for="folder-expiry">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2.5">
+                                                <circle cx="12" cy="12" r="10" />
+                                                <polyline points="12 6 12 12 16 14" />
+                                            </svg>
+                                            Self-Destruct After
+                                        </label>
+                                        <select id="folder-expiry" name="expiry" class="advanced-field-input"
+                                            style="appearance: auto; cursor: pointer;">
+                                            <option value="never">Never (Default)</option>
+                                            <option value="1h">1 Hour</option>
+                                            <option value="24h">24 Hours</option>
+                                            <option value="7d">7 Days</option>
+                                            <option value="30d">30 Days</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </form>
 
@@ -227,7 +303,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="dash-folders-section">
             <div class="dash-card-header">
                 <h3>Your Folders</h3>
-                <button onclick="document.getElementById('folder-name-input').focus()" class="btn btn-sm btn-primary">+
+                <button onclick="document.getElementById('fld_slug_box').focus()" class="btn btn-sm btn-primary">+
                     New Folder</button>
             </div>
             <div class="dash-folders-grid" id="dash-folders">
@@ -239,7 +315,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </svg>
                         <h4>No folders yet</h4>
                         <p>Create your first folder to get started</p>
-                        <button onclick="document.getElementById('folder-name-input').focus()"
+                        <button onclick="document.getElementById('fld_slug_box').focus()"
                             class="btn btn-primary btn-sm">Create Folder</button>
                     </div>
                 <?php else: ?>
@@ -257,7 +333,17 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div class="dash-folder-meta">
                                     <span><?php echo $f['total_files']; ?> files</span>
                                     <span><?php echo formatFileSize($f['total_size']); ?></span>
-                                    <span><?php echo timeAgo($f['created_at']); ?></span>
+                                    <span>
+                                        <?php if (!empty($f['password_hash'])): ?>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2.5"
+                                                style="color: var(--amber-500); margin-right: 2px; vertical-align: middle; margin-top: -2px;">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                            </svg>
+                                        <?php endif; ?>
+                                        <?php echo timeAgo($f['created_at']); ?>
+                                    </span>
                                 </div>
                             </div>
                             <button class="btn-icon"

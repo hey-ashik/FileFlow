@@ -18,15 +18,17 @@ if (!validateCSRFToken($csrfToken)) {
     jsonResponse(['success' => false, 'errors' => ['Invalid security token. Please refresh the page.']], 403);
 }
 
-// Get folder name
-$folderName = trim($_POST['folder_name'] ?? '');
+// Get folder name (handle both old and new param names)
+$folderName = trim($_POST['fld_slug_val'] ?? $_POST['fld_name_val'] ?? '');
+$password = $_POST['password'] ?? null;
+$expiry = $_POST['expiry'] ?? null;
 
 if (empty($folderName)) {
     jsonResponse(['success' => false, 'errors' => ['Please enter a folder name.']], 400);
 }
 
 // Create folder
-$result = createFolder($folderName);
+$result = createFolder($folderName, $password, $expiry);
 
 if ($result['success']) {
     // Generate new CSRF token

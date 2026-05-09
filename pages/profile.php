@@ -146,8 +146,12 @@ if (!empty($user['profile_slug'])) {
                 <p style="margin-bottom: 1rem; font-weight: 500;">Your profile is live at:</p>
                 <a href="<?php echo htmlspecialchars($publicProfileUrl); ?>" target="_blank" style="color: #0ea5e9; font-weight: 600; font-size: 1.1rem; text-decoration: none; word-break: break-all;"><?php echo htmlspecialchars($publicProfileUrl); ?></a>
                 
-                <div style="margin-top: 1.5rem; display: flex; justify-content: center;">
+                <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; align-items: center; flex-wrap: wrap;">
                     <div id="qrcode"></div>
+                    <div style="text-align: center; background: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; min-width: 140px;">
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Profile Visits</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #0ea5e9;"><?php echo number_format($user['profile_visits'] ?? 0); ?></div>
+                    </div>
                 </div>
                 <p style="font-size: 0.85rem; color: #64748b; margin-top: 1rem;">Scan or share this QR code for your profile card.</p>
             </div>

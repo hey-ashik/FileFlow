@@ -111,7 +111,7 @@
         btnOk.addEventListener('click', handleOk);
     };
 </script>
-<script src="/assets/js/app.js?v=3.0.5"></script>
+<script src="/assets/js/app.js?v=<?php echo $ver; ?>"></script>
 </body>
 
 </html>

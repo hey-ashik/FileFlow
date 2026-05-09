@@ -8,6 +8,82 @@ if (!isset($folder)) {
     exit;
 }
 
+// Check if folder has expired
+if (!empty($folder['expires_at']) && strtotime($folder['expires_at']) < time()) {
+    $errorType = 'expired';
+    $folderName = $folder['display_name'];
+    require __DIR__ . '/error.php';
+    exit;
+}
+
+// Handle Password Protection
+$isOwner = (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']);
+$requiresPassword = !empty($folder['password_hash']) && !$isOwner;
+$passwordError = '';
+
+if ($requiresPassword) {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    
+    // Check if password was submitted
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['folder_password'])) {
+        if (password_verify($_POST['folder_password'], $folder['password_hash'])) {
+            $_SESSION['folder_auth_' . $folder['id']] = true;
+        } else {
+            $passwordError = 'Incorrect password. Please try again.';
+        }
+    }
+    
+    // Check if already authenticated in session
+    if (isset($_SESSION['folder_auth_' . $folder['id']]) && $_SESSION['folder_auth_' . $folder['id']] === true) {
+        $requiresPassword = false;
+    }
+}
+
+// If still requires password, show the password page
+if ($requiresPassword) {
+    $currentPage = 'folder_auth';
+    $pageTitle = 'Password Required - ' . APP_NAME;
+    require_once __DIR__ . '/../includes/header.php';
+    ?>
+    <section class="auth-page">
+        <div class="auth-card" style="text-align: center;">
+            <div class="auth-icon" style="margin-bottom: 24px; background: var(--gray-50); color: var(--gray-600);">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+            </div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 12px;">Password Protected</h1>
+            <p style="color: var(--gray-500); margin-bottom: 32px;">The folder <strong>"<?php echo htmlspecialchars($folder['display_name']); ?>"</strong> is protected. Please enter the password to view its contents.</p>
+            
+            <form method="POST" class="auth-form">
+                <div class="form-group">
+                    <div class="form-input-wrap <?php echo $passwordError ? 'error' : ''; ?>" style="<?php echo $passwordError ? 'border-color: #ef4444;' : ''; ?>">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        <input type="password" name="folder_password" placeholder="Enter folder password" required autofocus>
+                    </div>
+                    <?php if ($passwordError): ?>
+                        <div class="input-hint error" style="margin-top: 8px; justify-content: flex-start;"><?php echo $passwordError; ?></div>
+                    <?php endif; ?>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top: 12px;">
+                    Unlock Folder
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <a href="/" class="form-link">Back to Home</a>
+            </div>
+        </div>
+    </section>
+    <?php
+    require_once __DIR__ . '/../includes/footer.php';
+    exit;
+}
+
 $currentPage = 'folder';
 $pageTitle = htmlspecialchars($folder['display_name']) . ' - ' . APP_NAME;
 $pageDescription = 'View and download files from "' . htmlspecialchars($folder['display_name']) . '" on FileFlow.';
@@ -47,6 +123,11 @@ require_once __DIR__ . '/../includes/header.php';
                     <h1 class="folder-title"><?php echo htmlspecialchars($folder['display_name']); ?></h1>
                     <div class="folder-meta">
                         <span class="meta-item">
+                            <?php if (!empty($folder['password_hash'])): ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--amber-500); margin-right: 4px;">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            <?php endif; ?>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

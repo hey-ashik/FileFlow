@@ -24,6 +24,12 @@ $errorMessages = [
         'message' => 'Something went wrong on our end. Please try again later.',
         'icon' => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>',
         'code' => '500'
+    ],
+    'expired' => [
+        'title' => 'Folder Expired',
+        'message' => 'This folder has self-destructed and is no longer available.',
+        'icon' => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        'code' => '410'
     ]
 ];
 

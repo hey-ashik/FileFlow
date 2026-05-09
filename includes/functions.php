@@ -14,9 +14,8 @@ function setupAdminAndSchema(): void {
     if ($setupDone) return;
     $setupDone = true;
 
-    // Performance Optimization: Prevent heavy database checks on every request
-    $lockFile = UPLOAD_DIR . '.db_optimized';
-    if (file_exists($lockFile)) return;
+    // Schema setup runs on every request for now to ensure all columns are present
+    // especially during this transition phase.
 
     try {
         $db = getDB();
@@ -60,7 +59,25 @@ function setupAdminAndSchema(): void {
                 ADD COLUMN `cv_button_color` VARCHAR(20) NOT NULL DEFAULT '#16a34a'");
         }
 
-        // Setup admin user
+        try {
+            $db->query("SELECT password_hash FROM folders LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE folders ADD COLUMN password_hash VARCHAR(255) DEFAULT NULL");
+        }
+        
+        try {
+            $db->query("SELECT expires_at FROM folders LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE folders ADD COLUMN expires_at DATETIME DEFAULT NULL");
+        }
+        
+        try {
+            $db->query("SELECT profile_visits FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN profile_visits INT UNSIGNED NOT NULL DEFAULT 0");
+        }
+
+        // Mark setup as complete to improve performance on next loads
         $email = 'ashikulislam2070@gmail.com';
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->execute([$email]);
@@ -77,6 +94,9 @@ function setupAdminAndSchema(): void {
 
         // Mark setup as complete to improve performance on next loads
         @file_put_contents(UPLOAD_DIR . '.db_optimized', date('Y-m-d H:i:s'));
+
+        // Run cleanup
+        cleanupExpiredFolders();
     } catch (PDOException $e) {
         error_log("Setup error: " . $e->getMessage());
     }
@@ -133,7 +153,7 @@ function folderExists(string $slug): bool {
 /**
  * Create a new folder
  */
-function createFolder(string $name): array {
+function createFolder(string $name, ?string $password = null, ?string $expiry = null): array {
     $slug = sanitizeSlug($name);
     $displayName = htmlspecialchars(trim($name), ENT_QUOTES, 'UTF-8');
     
@@ -165,18 +185,30 @@ function createFolder(string $name): array {
         if (session_status() === PHP_SESSION_NONE) session_start();
         if (isset($_SESSION['user_id'])) $userId = $_SESSION['user_id'];
         
-        // Try with user_id column first, fall back without it
+        // Handle password hashing
+        $passwordHash = !empty($password) ? password_hash($password, PASSWORD_BCRYPT) : null;
+        
+        // Handle expiration
+        $expiresAt = null;
+        if (!empty($expiry) && $expiry !== 'never') {
+            $date = new DateTime();
+            switch ($expiry) {
+                case '1h': $date->modify('+1 hour'); break;
+                case '24h': $date->modify('+24 hours'); break;
+                case '7d': $date->modify('+7 days'); break;
+                case '30d': $date->modify('+30 days'); break;
+            }
+            $expiresAt = $date->format('Y-m-d H:i:s');
+        }
+
+        // Try with new columns
         try {
+            $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, password_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$name, $slug, $displayName, $userId, $passwordHash, $expiresAt]);
+        } catch (PDOException $colErr) {
+            // Fallback for older schema if migration hasn't run yet
             $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id) VALUES (?, ?, ?, ?)");
             $stmt->execute([$name, $slug, $displayName, $userId]);
-        } catch (PDOException $colErr) {
-            // If user_id column doesn't exist, insert without it
-            if (strpos($colErr->getMessage(), 'user_id') !== false || strpos($colErr->getMessage(), 'Unknown column') !== false) {
-                $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name) VALUES (?, ?, ?)");
-                $stmt->execute([$name, $slug, $displayName]);
-            } else {
-                throw $colErr;
-            }
         }
         
         return [
@@ -214,18 +246,56 @@ function incrementFolderVisits(int $folderId): void {
         $stmt = $db->prepare("UPDATE folders SET visits = visits + 1 WHERE id = ?");
         $stmt->execute([$folderId]);
     } catch (PDOException $e) {
-        // If the 'visits' column doesn't exist yet (SQLSTATE 42S22), create it automatically and try again
-        if ($e->getCode() == '42S22') {
-            try {
-                $db->exec("ALTER TABLE `folders` ADD COLUMN `visits` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `total_size`");
-                $stmt = $db->prepare("UPDATE folders SET visits = visits + 1 WHERE id = ?");
-                $stmt->execute([$folderId]);
-            } catch (PDOException $e2) {
-                error_log("Failed to auto-create visits column: " . $e2->getMessage());
+        error_log("Failed to increment visits: " . $e->getMessage());
+    }
+}
+
+/**
+ * Clean up expired folders
+ */
+function cleanupExpiredFolders(): void {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id, slug FROM folders WHERE expires_at IS NOT NULL AND expires_at < NOW()");
+        $stmt->execute();
+        $expiredFolders = $stmt->fetchAll();
+
+        foreach ($expiredFolders as $folder) {
+            // Get all files in this folder
+            $files = getFilesByFolderId($folder['id']);
+            foreach ($files as $file) {
+                deleteFile($file['id']);
             }
-        } else {
-            error_log("Failed to increment visits: " . $e->getMessage());
+
+            // Delete the physical directory
+            $dirPath = UPLOAD_DIR . $folder['slug'];
+            if (is_dir($dirPath)) {
+                // Delete everything inside
+                $filesInDir = array_diff(scandir($dirPath), ['.', '..']);
+                foreach ($filesInDir as $fileInDir) {
+                    @unlink($dirPath . '/' . $fileInDir);
+                }
+                @rmdir($dirPath);
+            }
+
+            // Delete folder from database
+            $db->prepare("DELETE FROM folders WHERE id = ?")->execute([$folder['id']]);
         }
+    } catch (PDOException $e) {
+        error_log("Cleanup error: " . $e->getMessage());
+    }
+}
+
+/**
+ * Increment profile visits
+ */
+function incrementProfileVisits(string $slug): void {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE users SET profile_visits = profile_visits + 1 WHERE profile_slug = ?");
+        $stmt->execute([$slug]);
+    } catch (PDOException $e) {
+        error_log("Failed to increment profile visits: " . $e->getMessage());
     }
 }
 

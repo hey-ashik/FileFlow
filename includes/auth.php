@@ -125,6 +125,7 @@ function getCurrentUser(): ?array {
         'cv_path' => $user['cv_path'] ?? null,
         'cv_description' => $user['cv_description'] ?? null,
         'cv_button_color' => $user['cv_button_color'] ?? '#16a34a',
+        'profile_visits' => $user['profile_visits'] ?? 0,
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
         'is_admin' => $_SESSION['is_admin'] ?? false
     ];

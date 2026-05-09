@@ -46,7 +46,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 
     <!-- Main Stylesheet -->
-    <?php $ver = '3.0.2'; // Using static version for better performance via browser caching ?>
+    <?php $ver = '3.1.0'; // Premium UI Overhaul: Vertical Advanced Settings ?>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
 </head>
 

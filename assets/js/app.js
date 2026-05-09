@@ -245,9 +245,38 @@ function scrollToCreate(e) {
     const section = document.getElementById('create-section');
     if (section) {
         section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => document.getElementById('folder-name-input')?.focus(), 500);
+        setTimeout(() => document.getElementById('fld_slug_box')?.focus(), 500);
     }
 }
+
+function setCreateMode(mode) {
+    const fields = document.getElementById('advanced-options-fields');
+    const normalBtn = document.getElementById('mode-normal');
+    const advancedBtn = document.getElementById('mode-advanced');
+
+    if (!fields || !normalBtn || !advancedBtn) return;
+
+    if (mode === 'advanced') {
+        fields.style.display = 'block';
+        advancedBtn.classList.add('active');
+        normalBtn.classList.remove('active');
+
+        // Focus password field if empty
+        const passInput = document.getElementById('folder-password');
+        if (passInput && !passInput.value) passInput.focus();
+    } else {
+        fields.style.display = 'none';
+        advancedBtn.classList.remove('active');
+        normalBtn.classList.add('active');
+
+        // Clear advanced values when switching back to normal for safety
+        const passInput = document.getElementById('folder-password');
+        const expirySelect = document.getElementById('folder-expiry');
+        if (passInput) passInput.value = '';
+        if (expirySelect) expirySelect.value = 'never';
+    }
+}
+window.setCreateMode = setCreateMode;
 
 /* ===== CREATE FOLDER ===== */
 function initCreateForm() {
@@ -256,9 +285,15 @@ function initCreateForm() {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const input = document.getElementById('folder-name-input');
+        const input = document.getElementById('fld_slug_box');
         const btn = document.getElementById('btn-create-folder');
         const hint = document.getElementById('folder-hint');
+        
+        if (!input) {
+            console.error('Folder input not found!');
+            return;
+        }
+
         const folderName = input.value.trim();
 
         if (!folderName) {
@@ -274,8 +309,7 @@ function initCreateForm() {
         btn.disabled = true;
 
         try {
-            const formData = new FormData();
-            formData.append('folder_name', folderName);
+            const formData = new FormData(form);
             formData.append('csrf_token', getCSRF());
 
             const res = await fetch('/api/create-folder', { method: 'POST', body: formData });
@@ -327,7 +361,7 @@ function resetCreateForm() {
     const icon = document.querySelector('.create-icon');
     const success = document.getElementById('create-success');
     const hint = document.getElementById('folder-hint');
-    const input = document.getElementById('folder-name-input');
+    const input = document.getElementById('fld_slug_box');
 
     if (form) { form.style.display = ''; form.reset(); }
     if (icon) icon.style.display = '';
@@ -714,6 +748,7 @@ window.shareFolderUrl = shareFolderUrl;
 window.toggleQR = toggleQR;
 window.removeFromHistory = removeFromHistory;
 window.togglePasswordVisibility = togglePasswordVisibility;
+window.setCreateMode = setCreateMode;
 
 /* ===== USER DROPDOWN ===== */
 function initUserDropdown() {
@@ -922,4 +957,13 @@ function setBtnLoading(btn, loading) {
         if (loader) loader.style.display = 'none';
         btn.disabled = false;
     }
+}
+
+function getCSRF() {
+    return document.getElementById('csrf-token')?.value || '';
+}
+
+function updateCSRF(token) {
+    const el = document.getElementById('csrf-token');
+    if (el && token) el.value = token;
 }
