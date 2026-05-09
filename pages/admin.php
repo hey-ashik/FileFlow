@@ -159,8 +159,8 @@ $unassignedFolders = $db->query("
                                         <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start;">
                                             <div>
                                                 <div style="font-weight: 600; color: var(--gray-900); margin-bottom: 0.25rem;"><?= htmlspecialchars($f['display_name']) ?></div>
-                                                <a href="/<?= $f['slug'] ?>/" target="_blank" style="color: var(--blue-600); font-size: 0.875rem; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 0.5rem; text-decoration: none;">
-                                                    /<?= $f['slug'] ?>/
+                                                <a href="/<?= $f['slug'] ?>" target="_blank" style="color: var(--blue-600); font-size: 0.875rem; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 0.5rem; text-decoration: none;">
+                                                    /<?= $f['slug'] ?>
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                                 </a>
                                                 <div style="font-size: 0.75rem; color: var(--gray-500); display: flex; align-items: center; gap: 0.5rem;">
@@ -296,8 +296,8 @@ $unassignedFolders = $db->query("
                                     </div>
                                 </td>
                                 <td style="padding: 1.25rem 1.5rem;">
-                                    <a href="/<?= $f['slug'] ?>/" target="_blank" style="color: var(--blue-600); font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                        /<?= $f['slug'] ?>/
+                                    <a href="/<?= $f['slug'] ?>" target="_blank" style="color: var(--blue-600); font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                        /<?= $f['slug'] ?>
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                     </a>
                                 </td>

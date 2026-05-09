@@ -303,7 +303,7 @@ function showCreateSuccess(folder) {
     if (icon) icon.style.display = 'none';
     if (success) success.style.display = 'block';
     if (urlInput) urlInput.value = folder.url;
-    if (gotoBtn) gotoBtn.href = '/' + folder.slug + '/';
+    if (gotoBtn) gotoBtn.href = '/' + folder.slug;
 
     // Generate QR
     const qrBox = document.getElementById('qr-code');
@@ -665,7 +665,7 @@ function renderHistory() {
     }
 
     grid.innerHTML = history.map(h => `
-        <div class="history-card" onclick="window.location.href='/${h.slug}/'">
+        <div class="history-card" onclick="window.location.href='/${h.slug}'">
             <div class="history-card-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </div>

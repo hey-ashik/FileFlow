@@ -13,7 +13,7 @@ $pageTitle = htmlspecialchars($folder['display_name']) . ' - ' . APP_NAME;
 $pageDescription = 'View and download files from "' . htmlspecialchars($folder['display_name']) . '" on FileFlow.';
 
 $files = getFilesByFolderId($folder['id']);
-$folderUrl = APP_URL . '/' . $folder['slug'] . '/';
+$folderUrl = APP_URL . '/' . $folder['slug'];
 
 require_once __DIR__ . '/../includes/header.php';
 ?>

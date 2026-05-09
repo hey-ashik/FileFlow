@@ -27,7 +27,17 @@ if (!is_dir(UPLOAD_DIR)) {
 
 // Parse request URI
 $requestUri = $_SERVER['REQUEST_URI'];
-$path = parse_url($requestUri, PHP_URL_PATH);
+$urlParts = parse_url($requestUri);
+$path = $urlParts['path'] ?? '/';
+
+// Force remove trailing slash for SEO and consistency (except for root)
+if ($path !== '/' && substr($path, -1) === '/') {
+    $newPath = rtrim($path, '/');
+    $queryString = isset($urlParts['query']) ? '?' . $urlParts['query'] : '';
+    header("Location: " . $newPath . $queryString, true, 301);
+    exit;
+}
+
 $path = rtrim($path, '/');
 $basePath = '';
 $path = substr($path, strlen($basePath));

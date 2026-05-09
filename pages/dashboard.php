@@ -244,7 +244,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 <?php else: ?>
                     <?php foreach ($folders as $f): ?>
-                        <a href="/<?php echo htmlspecialchars($f['slug']); ?>/" class="dash-folder-card"
+                        <a href="/<?php echo htmlspecialchars($f['slug']); ?>" class="dash-folder-card"
                             id="dash-folder-<?php echo $f['id']; ?>">
                             <div class="dash-folder-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
