@@ -25,8 +25,17 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- Dashboard Header -->
         <div class="dash-header">
             <div class="dash-welcome">
-                <h1>Welcome back, <span class="gradient-text"><?php echo htmlspecialchars($user['name']); ?></span></h1>
-                <p>Here's your file sharing overview</p>
+                <div style="display:flex; align-items:center; gap: 16px; flex-wrap:wrap;">
+                    <h1 style="margin:0;">Welcome back, <span class="gradient-text"><?php echo htmlspecialchars($user['name']); ?></span></h1>
+                    <button onclick="location.reload()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.85rem; border-radius:100px; display:inline-flex; align-items:center; gap:6px; height:auto; background:var(--white);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh Data
+                    </button>
+                </div>
+                <p style="margin-top:8px;">Here's your file sharing overview</p>
             </div>
             <div class="dash-clock" id="dash-clock">
                 <div class="clock-time" id="clock-time">--:--:--</div>
@@ -284,7 +293,8 @@ require_once __DIR__ . '/../includes/header.php';
             if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, dateOpts);
         }
         updateClock();
-        setInterval(updateClock, 1000);
+        if (window.dashClockInterval) clearInterval(window.dashClockInterval);
+        window.dashClockInterval = setInterval(updateClock, 1000);
     }
 
     // Draw bar chart on canvas
@@ -371,11 +381,20 @@ require_once __DIR__ . '/../includes/header.php';
         });
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    // Run immediately when script is evaluated
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initDashClock();
+            drawUploadChart();
+            window.addEventListener('resize', drawUploadChart);
+        });
+    } else {
+        // SPA navigation case: DOM is already ready
         initDashClock();
         drawUploadChart();
+        window.removeEventListener('resize', drawUploadChart); // Prevent multiple bindings
         window.addEventListener('resize', drawUploadChart);
-    });
+    }
 
     async function deleteMyFolder(folderId) {
         customConfirm(

@@ -8,8 +8,8 @@ $currentPage = 'error';
 
 $errorMessages = [
     'not_found' => [
-        'title' => 'Folder Not Found',
-        'message' => 'The folder you\'re looking for doesn\'t exist or has been removed.',
+        'title' => 'Page Not Found',
+        'message' => 'The page you\'re looking for doesn\'t exist or has been removed.',
         'icon' => '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>',
         'code' => '404'
     ],
@@ -46,11 +46,17 @@ require_once __DIR__ . '/../includes/header.php';
         <p class="error-message"><?php echo $error['message']; ?></p>
         <div class="error-actions">
             <a href="/" class="btn btn-primary btn-lg" id="error-home-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
                 Go Home
             </a>
             <button class="btn btn-ghost btn-lg" onclick="history.back()" id="error-back-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
                 Go Back
             </button>
         </div>

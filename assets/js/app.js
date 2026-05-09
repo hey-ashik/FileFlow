@@ -119,6 +119,15 @@ async function handleSpaLink(url, push = true) {
         if (newContent && currentContent) {
             currentContent.innerHTML = newContent.innerHTML;
             
+            // Execute scripts inside new content
+            const scripts = currentContent.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            
             // Update Body Classes (Home vs Inner)
             document.body.className = doc.body.className;
             

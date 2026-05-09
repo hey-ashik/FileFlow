@@ -186,7 +186,7 @@ function createFolder(string $name): array {
                 'name' => $name,
                 'slug' => $slug,
                 'display_name' => $displayName,
-                'url' => APP_URL . '/' . $slug . '/'
+                'url' => APP_URL . '/' . $slug
             ]
         ];
     } catch (PDOException $e) {
