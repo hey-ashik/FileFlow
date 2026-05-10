@@ -82,8 +82,13 @@ function initSpaNavigation() {
     });
 
     // Handle browser back/forward
+    window.spaCurrentPath = window.location.pathname + window.location.search;
     window.addEventListener('popstate', () => {
-        handleSpaLink(window.location.href, false);
+        const newPath = window.location.pathname + window.location.search;
+        if (newPath !== window.spaCurrentPath) {
+            window.spaCurrentPath = newPath;
+            handleSpaLink(window.location.href, false);
+        }
     });
 }
 
@@ -145,6 +150,7 @@ async function handleSpaLink(url, push = true) {
 
             // Update URL
             if (push) history.pushState({}, '', url);
+            window.spaCurrentPath = window.location.pathname + window.location.search;
 
             // Re-initialize scripts for new content
             initApp();
@@ -249,6 +255,14 @@ function scrollToCreate(e) {
     }
 }
 
+function scrollToFeatures(e) {
+    e.preventDefault();
+    const section = document.getElementById('features-section');
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
 function setCreateMode(mode) {
     const fields = document.getElementById('advanced-options-fields');
     const normalBtn = document.getElementById('mode-normal');
@@ -261,9 +275,9 @@ function setCreateMode(mode) {
         advancedBtn.classList.add('active');
         normalBtn.classList.remove('active');
 
-        // Focus password field if empty
-        const passInput = document.getElementById('folder-password');
-        if (passInput && !passInput.value) passInput.focus();
+        // Focus password field if empty (disabled to prevent keyboard popup)
+        // const passInput = document.getElementById('folder-password');
+        // if (passInput && !passInput.value) passInput.focus();
     } else {
         fields.style.display = 'none';
         advancedBtn.classList.remove('active');
@@ -742,6 +756,7 @@ function initQR() {
 
 /* ===== GLOBAL HELPERS ===== */
 window.scrollToCreate = scrollToCreate;
+window.scrollToFeatures = scrollToFeatures;
 window.copyFolderUrl = copyFolderUrl;
 window.resetCreateForm = resetCreateForm;
 window.shareFolderUrl = shareFolderUrl;

@@ -47,7 +47,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </svg>
                 Create Your Folder
             </a>
-            <a href="#features-section" class="btn btn-ghost btn-lg" id="hero-cta-features">
+            <a href="#features-section" class="btn btn-ghost btn-lg" id="hero-cta-features" onclick="scrollToFeatures(event)">
                 Learn More
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="5" y1="12" x2="19" y2="12" />
