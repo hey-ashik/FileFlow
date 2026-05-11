@@ -22,8 +22,9 @@ $requiresPassword = !empty($folder['password_hash']) && !$isOwner;
 $passwordError = '';
 
 if ($requiresPassword) {
-    if (session_status() === PHP_SESSION_NONE) session_start();
-    
+    if (session_status() === PHP_SESSION_NONE)
+        session_start();
+
     // Check if password was submitted
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['folder_password'])) {
         if (password_verify($_POST['folder_password'], $folder['password_hash'])) {
@@ -32,7 +33,7 @@ if ($requiresPassword) {
             $passwordError = 'Incorrect password. Please try again.';
         }
     }
-    
+
     // Check if already authenticated in session
     if (isset($_SESSION['folder_auth_' . $folder['id']]) && $_SESSION['folder_auth_' . $folder['id']] === true) {
         $requiresPassword = false;
@@ -54,26 +55,31 @@ if ($requiresPassword) {
                 </svg>
             </div>
             <h1 style="font-size: 1.5rem; margin-bottom: 12px;">Password Protected</h1>
-            <p style="color: var(--gray-500); margin-bottom: 32px;">The folder <strong>"<?php echo htmlspecialchars($folder['display_name']); ?>"</strong> is protected. Please enter the password to view its contents.</p>
-            
+            <p style="color: var(--gray-500); margin-bottom: 32px;">The folder
+                <strong>"<?php echo htmlspecialchars($folder['display_name']); ?>"</strong> is protected. Please enter the
+                password to view its contents.</p>
+
             <form method="POST" class="auth-form">
                 <div class="form-group">
-                    <div class="form-input-wrap <?php echo $passwordError ? 'error' : ''; ?>" style="<?php echo $passwordError ? 'border-color: #ef4444;' : ''; ?>">
+                    <div class="form-input-wrap <?php echo $passwordError ? 'error' : ''; ?>"
+                        style="<?php echo $passwordError ? 'border-color: #ef4444;' : ''; ?>">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
-                        <input type="password" name="folder_password" placeholder="Enter folder password" required autofocus>
+                        <input type="password" name="folder_password" placeholder="Enter folder password" required
+                            autofocus>
                     </div>
                     <?php if ($passwordError): ?>
-                        <div class="input-hint error" style="margin-top: 8px; justify-content: flex-start;"><?php echo $passwordError; ?></div>
+                        <div class="input-hint error" style="margin-top: 8px; justify-content: flex-start;">
+                            <?php echo $passwordError; ?></div>
                     <?php endif; ?>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top: 12px;">
                     Unlock Folder
                 </button>
             </form>
-            
+
             <div class="auth-footer">
                 <a href="/" class="form-link">Back to Home</a>
             </div>
@@ -89,7 +95,7 @@ $pageTitle = htmlspecialchars($folder['display_name']) . ' - ' . APP_NAME;
 $pageDescription = 'View and download files from "' . htmlspecialchars($folder['display_name']) . '" on FileFlow.';
 
 $files = getFilesByFolderId($folder['id']);
-$folderUrl = APP_URL . '/' . $folder['slug'] ;
+$folderUrl = APP_URL . '/' . $folder['slug'];
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -124,8 +130,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="folder-meta">
                         <span class="meta-item">
                             <?php if (!empty($folder['password_hash'])): ?>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--amber-500); margin-right: 4px;">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" style="color: var(--amber-500); margin-right: 4px;">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
                             <?php endif; ?>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -157,7 +165,29 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
             </div>
-            <div class="folder-actions">
+            <div class="folder-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <?php if ($isOwner): ?>
+                    <?php if (empty($folder['password_hash'])): ?>
+                        <button class="btn btn-outline" onclick="window.openProtectModal()"
+                            style="border-color: var(--amber-500); color: var(--amber-600);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Protect
+                        </button>
+                    <?php else: ?>
+                        <button class="btn btn-outline" onclick="window.openUnprotectModal()"
+                            style="border-color: var(--amber-500); color: var(--amber-600);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                <path d="M12 15v2" stroke-width="2" />
+                            </svg>
+                            Remove Password
+                        </button>
+                    <?php endif; ?>
+                <?php endif; ?>
                 <button class="btn btn-outline btn-share" onclick="shareFolderUrl('<?php echo $folderUrl; ?>')"
                     id="btn-share-folder">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -323,10 +353,142 @@ require_once __DIR__ . '/../includes/header.php';
 <input type="hidden" id="folder-id" value="<?php echo $folder['id']; ?>">
 <input type="hidden" id="folder-slug" value="<?php echo htmlspecialchars($folder['slug']); ?>">
 <input type="hidden" id="folder-url" value="<?php echo $folderUrl; ?>">
-<input type="hidden" id="is-owner" value="<?php echo (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']) ? '1' : '0'; ?>">
+<input type="hidden" id="is-owner"
+    value="<?php echo (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']) ? '1' : '0'; ?>">
+
+<!-- Protect Modal -->
+<div id="protect-modal" class="modal-overlay" onclick="if(event.target===this) window.closeProtectModal()"
+    style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; padding: 1rem; opacity: 0; transition: opacity 0.3s ease;">
+    <div class="modal-content"
+        style="background:var(--white); padding:2rem; border-radius:12px; width:100%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.1); transform: translateY(-20px); transition: transform 0.3s ease;">
+        <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.25rem;">Protect Folder</h3>
+        <p style="color:var(--gray-500); margin-bottom:1.5rem; font-size:0.9rem;">Set a password to protect this folder.
+            Anyone trying to access it will need to enter this password.</p>
+        <div class="form-group" style="margin-bottom:1.5rem;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">New Password</label>
+            <input type="password" id="protect-password"
+                style="width:100%; padding:0.75rem; border:1px solid #cbd5e1; border-radius:6px; font-size:1rem;"
+                placeholder="Min 4 characters">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:1rem;">
+            <button class="btn btn-ghost" onclick="window.closeProtectModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="window.submitProtectFolder()">Save Password</button>
+        </div>
+    </div>
+</div>
+
+<!-- Unprotect Modal -->
+<div id="unprotect-modal" class="modal-overlay" onclick="if(event.target===this) window.closeUnprotectModal()"
+    style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center; padding: 1rem; opacity: 0; transition: opacity 0.3s ease;">
+    <div class="modal-content"
+        style="background:var(--white); padding:2rem; border-radius:12px; width:100%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.1); transform: translateY(-20px); transition: transform 0.3s ease;">
+        <h3 style="margin-top:0; margin-bottom:1rem; font-size:1.25rem;">Remove Password</h3>
+        <p style="color:var(--gray-500); margin-bottom:1.5rem; font-size:0.9rem;">Enter the current password to convert
+            this back to a normal folder.</p>
+        <div class="form-group" style="margin-bottom:1.5rem;">
+            <label style="display:block; margin-bottom:0.5rem; font-weight:500;">Current Password</label>
+            <input type="password" id="unprotect-password"
+                style="width:100%; padding:0.75rem; border:1px solid #cbd5e1; border-radius:6px; font-size:1rem;"
+                placeholder="Enter passcode">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:1rem;">
+            <button class="btn btn-ghost" onclick="window.closeUnprotectModal()">Cancel</button>
+            <button class="btn btn-primary" style="background:#ef4444;" onclick="window.submitUnprotectFolder()">Remove
+                Protection</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    async function deleteFile(fileId) {
+    window.openProtectModal = function () {
+        const modal = document.getElementById('protect-modal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.display = 'flex';
+        setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'translateY(0)'; }, 10);
+        document.getElementById('protect-password').value = '';
+        document.getElementById('protect-password').focus();
+    };
+
+    window.closeProtectModal = function () {
+        const modal = document.getElementById('protect-modal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.opacity = '0';
+        content.style.transform = 'translateY(-20px)';
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    };
+
+    window.openUnprotectModal = function () {
+        const modal = document.getElementById('unprotect-modal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.display = 'flex';
+        setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'translateY(0)'; }, 10);
+        document.getElementById('unprotect-password').value = '';
+        document.getElementById('unprotect-password').focus();
+    };
+
+    window.closeUnprotectModal = function () {
+        const modal = document.getElementById('unprotect-modal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.opacity = '0';
+        content.style.transform = 'translateY(-20px)';
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    };
+
+    window.submitProtectFolder = async function () {
+        const pass = document.getElementById('protect-password').value;
+        if (!pass || pass.length < 4) {
+            showToast('Please enter a password with at least 4 characters', 'error');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('folder_id', document.getElementById('folder-id').value);
+        formData.append('action', 'protect');
+        formData.append('new_password', pass);
+        formData.append('csrf_token', getCSRF());
+
+        try {
+            const res = await fetch('/api/update-folder-security', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.csrf_token) updateCSRF(data.csrf_token);
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Error updating folder', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
+    };
+
+    window.submitUnprotectFolder = async function () {
+        const pass = document.getElementById('unprotect-password').value;
+        if (!pass) {
+            showToast('Please enter current password', 'error');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('folder_id', document.getElementById('folder-id').value);
+        formData.append('action', 'unprotect');
+        formData.append('current_password', pass);
+        formData.append('csrf_token', getCSRF());
+
+        try {
+            const res = await fetch('/api/update-folder-security', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.csrf_token) updateCSRF(data.csrf_token);
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Error updating folder', 'error');
+            }
+        } catch (e) {
+            showToast('Network error', 'error');
+        }
+    };
+
+    window.deleteFile = async function (fileId) {
         customConfirm(
             'Delete File',
             'Are you sure you want to delete this file? This cannot be undone.',
@@ -338,9 +500,9 @@ require_once __DIR__ . '/../includes/header.php';
                 try {
                     const res = await fetch('/api/delete-file', { method: 'POST', body: formData });
                     const data = await res.json();
-                    
+
                     if (data.csrf_token) updateCSRF(data.csrf_token);
-                    
+
                     if (data.success) {
                         showToast('File deleted successfully.');
                         const fileCard = document.getElementById(`file-${fileId}`);

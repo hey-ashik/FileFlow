@@ -214,7 +214,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </button>
                     </div>
                     <div class="success-actions">
-                        <a href="#" class="btn btn-primary" id="btn-goto-folder">Open Folder</a>
+                        <a href="#" class="btn btn-primary" id="btn-goto-folder" data-no-spa="true">Open Folder</a>
                         <button class="btn btn-ghost" onclick="resetCreateForm()" id="btn-create-another">Create
                             Another</button>
                     </div>

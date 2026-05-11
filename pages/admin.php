@@ -92,9 +92,9 @@ $unassignedFolders = $db->query("
                     <input type="text" id="user-search" placeholder="Search users by name or email..." style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius); outline: none;">
                 </div>
             </div>
-            <div style="overflow-x: auto;">
+            <div style="overflow-x: auto; overflow-y: auto; max-height: 450px;">
                 <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead style="background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+                    <thead style="background: var(--gray-50); position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 0 var(--gray-200);">
                         <tr>
                             <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">User Info</th>
                             <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">Storage & Limit</th>
@@ -205,9 +205,9 @@ $unassignedFolders = $db->query("
                     <p style="color: var(--gray-500); font-size: 0.875rem;">Users have not created any public profile cards yet.</p>
                 </div>
             <?php else: ?>
-                <div style="overflow-x: auto;">
+                <div style="overflow-x: auto; overflow-y: auto; max-height: 450px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead style="background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+                        <thead style="background: var(--gray-50); position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 0 var(--gray-200);">
                             <tr>
                                 <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">User</th>
                                 <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">Profile Link</th>
@@ -271,9 +271,9 @@ $unassignedFolders = $db->query("
                     <p style="color: var(--gray-500); font-size: 0.875rem;">All folders currently belong to registered users.</p>
                 </div>
             <?php else: ?>
-                <div style="overflow-x: auto;">
+                <div style="overflow-x: auto; overflow-y: auto; max-height: 450px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                        <thead style="background: var(--gray-50); border-bottom: 1px solid var(--gray-200);">
+                        <thead style="background: var(--gray-50); position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 0 var(--gray-200);">
                             <tr>
                                 <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">Folder Info</th>
                                 <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--gray-600); font-size: 0.875rem;">Link</th>

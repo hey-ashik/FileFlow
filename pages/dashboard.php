@@ -288,7 +288,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 </div>
                                 <div style="display: flex; flex-direction: column; gap: 8px; min-width: 140px;">
                                     <a href="#" class="btn btn-primary btn-sm" style="justify-content: center;"
-                                        id="btn-goto-folder">Open Folder</a>
+                                        id="btn-goto-folder" data-no-spa="true">Open Folder</a>
                                     <button class="btn btn-ghost btn-sm" style="justify-content: center;"
                                         onclick="resetCreateForm()" id="btn-create-another">Create Another</button>
                                 </div>
@@ -321,7 +321,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <?php else: ?>
                     <?php foreach ($folders as $f): ?>
                         <a href="/<?php echo htmlspecialchars($f['slug']); ?>" class="dash-folder-card"
-                            id="dash-folder-<?php echo $f['id']; ?>">
+                            id="dash-folder-<?php echo $f['id']; ?>" data-no-spa="true">
                             <div class="dash-folder-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">

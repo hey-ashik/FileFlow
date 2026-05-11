@@ -157,6 +157,9 @@ switch (true) {
     case preg_match('#^/api/folder-info$#', $path):
         require __DIR__ . '/api/folder-info.php';
         break;
+    case preg_match('#^/api/update-folder-security$#', $path):
+        require __DIR__ . '/api/update-folder-security.php';
+        break;
 
     // Admin API routes
     case preg_match('#^/api/admin/update-user$#', $path):
