@@ -223,7 +223,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                         stroke-width="2">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                     </svg>
-                                    Messages & Network
+                                    Messages
                                 </a>
                                 <a href="/logout" class="nav-dropdown-item nav-dropdown-logout"
                                     onclick="window.location.href='/logout'; return false;">
