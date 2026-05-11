@@ -1301,8 +1301,8 @@ h4 {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--green-500), var(--emerald-600));
-    color: var(--white);
+    background: transparent;
+    /*color: var(--gray-800);*/
     border-radius: var(--radius-lg);
     flex-shrink: 0
 }
