@@ -158,7 +158,7 @@ if (!empty($user['profile_slug'])) {
             </style>
             <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Upload
-                    Resume/CV (PDF or DOCX)</label>
+                    Resume/CV (PDF Formet)</label>
                 <div class="cv-actions">
                     <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display: none;">
                     <button type="button" class="btn btn-primary"
