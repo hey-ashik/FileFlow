@@ -191,6 +191,16 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                     </div>
                                 </div>
                                 <div class="nav-dropdown-divider"></div>
+
+                                <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
+                                    <a href="/admin" class="nav-dropdown-item">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M12 2l9 4.9V12c0 5.5-4 10.7-9 12-5-1.3-9-6.5-9-12V6.9L12 2z" />
+                                        </svg>
+                                        Admin Panel
+                                    </a>
+                                <?php endif; ?>
                                 <a href="/dashboard" class="nav-dropdown-item">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
@@ -201,15 +211,6 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                     </svg>
                                     Dashboard
                                 </a>
-                                <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
-                                    <a href="/admin" class="nav-dropdown-item">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2">
-                                            <path d="M12 2l9 4.9V12c0 5.5-4 10.7-9 12-5-1.3-9-6.5-9-12V6.9L12 2z" />
-                                        </svg>
-                                        Admin Panel
-                                    </a>
-                                <?php endif; ?>
                                 <a href="/profile" class="nav-dropdown-item" data-no-spa="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
