@@ -187,8 +187,8 @@ if (!empty($user['profile_slug'])) {
             </div>
 
             <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Resume / CV
-                    Button Color</label>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Button
+                    Color (Download)</label>
                 <input type="color" id="cv_button_color" name="cv_button_color"
                     value="<?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>"
                     style="height: 40px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; padding: 2px;">
