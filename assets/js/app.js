@@ -59,6 +59,15 @@ function initSpaNavigation() {
         const isApi = url.pathname.startsWith('/api/');
 
         if (isInternal && isSelf && isNotSpecial && !isApi) {
+            // Check for data-no-spa attribute
+            if (link.getAttribute('data-no-spa') === 'true') return;
+
+            // Bypass SPA for chat links to ensure stability and correct message sending
+            if (url.search.includes('chat=')) {
+                window.location.href = link.href;
+                return;
+            }
+
             e.preventDefault();
             if (window.location.href === link.href) return;
             handleSpaLink(link.href);
@@ -77,6 +86,8 @@ function initSpaNavigation() {
         const isApi = url.pathname.startsWith('/api/');
 
         if (isInternal && isNotSpecial && !isApi && !spaCache.has(link.href)) {
+            // Don't prefetch chat links as they might trigger a refresh
+            if (url.search.includes('chat=')) return;
             prefetchSpaLink(link.href);
         }
     });
@@ -86,6 +97,11 @@ function initSpaNavigation() {
     window.addEventListener('popstate', () => {
         const newPath = window.location.pathname + window.location.search;
         if (newPath !== window.spaCurrentPath) {
+            // If navigating to a chat via back/forward, force a reload
+            if (window.location.search.includes('chat=')) {
+                window.location.reload();
+                return;
+            }
             window.spaCurrentPath = newPath;
             handleSpaLink(window.location.href, false);
         }
@@ -230,6 +246,17 @@ function initNavbar() {
                 toggle.classList.remove('active');
             }
         });
+
+        // Auto-close menu when an option is selected on mobile
+        const navItems = links.querySelectorAll('.nav-link, .nav-dropdown-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 1024) {
+                    links.classList.remove('open');
+                    toggle.classList.remove('active');
+                }
+            });
+        });
     }
     // Navbar scroll effect
     let lastScroll = 0;
@@ -302,7 +329,7 @@ function initCreateForm() {
         const input = document.getElementById('fld_slug_box');
         const btn = document.getElementById('btn-create-folder');
         const hint = document.getElementById('folder-hint');
-        
+
         if (!input) {
             console.error('Folder input not found!');
             return;

@@ -1,0 +1,6 @@
+{
+  "title": "DeepSeek V4 Pro (OpenRouter)",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-v4-pro",
+  "apiKey": "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"
+}

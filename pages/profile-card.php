@@ -7,16 +7,18 @@ if (!function_exists('incrementProfileVisits')) {
 $db = getDB();
 
 try {
-    $stmt = $db->prepare("SELECT full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits FROM users WHERE profile_slug = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits, is_public FROM users WHERE profile_slug = ? AND is_active = 1");
     $stmt->execute([$profileSlug]);
     $userProfile = $stmt->fetch();
 } catch (PDOException $e) {
-    // Fallback if profile_visits column doesn't exist yet
-    $stmt = $db->prepare("SELECT full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color FROM users WHERE profile_slug = ? AND is_active = 1");
+    // Fallback if profile_visits or is_public column doesn't exist yet
+    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color FROM users WHERE profile_slug = ? AND is_active = 1");
     $stmt->execute([$profileSlug]);
     $userProfile = $stmt->fetch();
-    if ($userProfile)
+    if ($userProfile) {
         $userProfile['profile_visits'] = 0;
+        $userProfile['is_public'] = 0;
+    }
 }
 
 if (!$userProfile) {
@@ -168,7 +170,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
         .info-row {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 0.5rem;
         }
 
@@ -368,7 +370,84 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                     <?php endif; ?>
                 </div>
 
+                <?php if (!empty($userProfile['is_public'])): 
+                    // Get connection count
+                    $followerCount = 0;
+                    try {
+                        $connCountStmt = $db->prepare("SELECT COUNT(*) FROM connections WHERE (requester_id = ? OR receiver_id = ?) AND status = 'accepted'");
+                        $connCountStmt->execute([$userProfile['id'], $userProfile['id']]);
+                        $followerCount = $connCountStmt->fetchColumn();
+                    } catch(Exception $e) {}
 
+                    $connStatus = null;
+                    $connId = null;
+                    $isRequester = false;
+                    $isLoggedInUser = false;
+                    if (function_exists('isLoggedIn') && isLoggedIn()) {
+                        $isLoggedInUser = true;
+                        $currUser = getCurrentUser();
+                        if ($currUser['id'] !== $userProfile['id']) {
+                            try {
+                                $stmt = $db->prepare("SELECT id, status, requester_id FROM connections WHERE (requester_id = ? AND receiver_id = ?) OR (requester_id = ? AND receiver_id = ?)");
+                                $stmt->execute([$currUser['id'], $userProfile['id'], $userProfile['id'], $currUser['id']]);
+                                $c = $stmt->fetch();
+                                if ($c) {
+                                    $connStatus = $c['status'];
+                                    $connId = $c['id'];
+                                    $isRequester = ($c['requester_id'] == $currUser['id']);
+                                }
+                            } catch (Exception $e) {}
+                        } else {
+                            $connStatus = 'self'; // Viewing own profile
+                        }
+                    }
+                ?>
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; justify-content: flex-start; gap: 0.75rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 500; margin-bottom: 1rem;">
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                Views: <span style="color: var(--text-main); font-weight: 700;"><?php echo number_format($userProfile['profile_visits'] ?? 0); ?></span>
+                            </span>
+                            <span style="color: #cbd5e1;">|</span>
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                Followers: <span style="color: var(--text-main); font-weight: 700;"><?php echo number_format($followerCount); ?></span>
+                            </span>
+                        </div>
+                        <?php if ($connStatus !== 'self'): ?>
+                        <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                            <?php if ($connStatus === 'accepted'): ?>
+                                <button class="btn-connect" ondblclick="handleDisconnect(<?php echo $userProfile['id']; ?>, this)" title="Double-click to unfriend" style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: none; background: #cbd5e1; color: var(--text-main); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: background 0.2s;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    Connected
+                                </button>
+                            <?php elseif ($connStatus === 'pending'): ?>
+                                <?php if ($isRequester): ?>
+                                    <button class="btn-connect" disabled style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: none; background: #cbd5e1; color: var(--text-main); font-weight: 600; cursor: default; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Requested
+                                    </button>
+                                <?php else: ?>
+                                    <div style="flex: 1; display: flex; gap: 0.5rem;">
+                                        <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'accepted', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">Accept</button>
+                                        <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'rejected', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s;">Decline</button>
+                                    </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <button onclick="handleConnect(<?php echo $userProfile['id']; ?>)" class="btn-connect" style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                                    Connect
+                                </button>
+                            <?php endif; ?>
+
+                            <button onclick="handleMessage(<?php echo $userProfile['id']; ?>, '<?php echo $connStatus; ?>')" class="btn-message" style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: var(--text-main); font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                Message
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($hasSocial): ?>
                     <div class="section">
@@ -427,9 +506,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                     <div class="section">
                         <div class="section-title">Career Portfolio</div>
                         <?php if (!empty($userProfile['cv_description'])): ?>
-                            <div class="section-content" style="margin-bottom: 1rem;">
-                                <?php echo htmlspecialchars($userProfile['cv_description']); ?>
-                            </div>
+                            <div class="section-content" style="margin-bottom: 1rem; text-align: left;"><?php echo htmlspecialchars($userProfile['cv_description']); ?></div>
                         <?php endif; ?>
                         <a href="<?php echo htmlspecialchars($userProfile['cv_path']); ?>" target="_blank"
                             style="display: block; width: 100%; text-align: center; padding: 0.75rem; border-radius: 8px; font-weight: 600; text-decoration: none; color: white; background-color: <?php echo htmlspecialchars($userProfile['cv_button_color'] ?: '#16a34a'); ?>; transition: opacity 0.2s;">
@@ -453,18 +530,9 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
         </div>
 
         <div class="footer-branding"
-            style="display: flex; justify-content: right; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">
+            style="display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--text-muted); margin-top: 2rem;">
             <div>Powered by <a href="/"
                     style="color: var(--primary); text-decoration: none; font-weight: 600;">FileFlow</a></div>
-            <div style="color: #e2e8f0;">|</div>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted);">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span>Views: <?php echo number_format($userProfile['profile_visits'] ?? 0); ?></span>
-            </div>
         </div>
     </div>
 
@@ -492,6 +560,97 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
             }).catch(err => {
                 alert('Failed to copy link. Please copy from address bar.');
             });
+        }
+
+        async function handleConnect(userId) {
+            const btn = document.querySelector('.btn-connect');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Sending...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/network?action=connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `target_id=${userId}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Requested`;
+                    btn.style.background = '#10b981';
+                } else if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.message || 'Error sending request');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                alert('Connection failed');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function handleMessage(userId, connStatus) {
+            if (connStatus !== 'accepted') {
+                alert('Connect first, then you can send a message.');
+                return;
+            }
+            window.location.href = `/messages?chat=${userId}`;
+        }
+
+        async function respondConnectionProfile(connId, status, btnElem) {
+            const originalText = btnElem.innerHTML;
+            btnElem.innerHTML = '...';
+            btnElem.disabled = true;
+
+            try {
+                const res = await fetch('/api/network?action=respond_connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `connection_id=${connId}&response=${status}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error responding to request');
+                    btnElem.innerHTML = originalText;
+                    btnElem.disabled = false;
+                }
+            } catch (err) {
+                alert('Request failed');
+                btnElem.innerHTML = originalText;
+                btnElem.disabled = false;
+            }
+        }
+        async function handleDisconnect(userId, btnElem) {
+            if (!confirm("Are you sure you want to unfriend this user?")) return;
+
+            const originalText = btnElem.innerHTML;
+            btnElem.innerHTML = 'Disconnecting...';
+            btnElem.disabled = true;
+
+            try {
+                const res = await fetch('/api/network?action=disconnect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `target_id=${userId}`
+                });
+                const data = await res.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error disconnecting');
+                    btnElem.innerHTML = originalText;
+                    btnElem.disabled = false;
+                }
+            } catch (err) {
+                alert('Request failed');
+                btnElem.innerHTML = originalText;
+                btnElem.disabled = false;
+            }
         }
     </script>
 

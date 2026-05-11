@@ -103,6 +103,16 @@ switch (true) {
         }
         require __DIR__ . '/pages/admin.php';
         break;
+    case $path === '/search':
+        require __DIR__ . '/pages/search.php';
+        break;
+    case $path === '/messages':
+        if (!isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
+        require __DIR__ . '/pages/messages.php';
+        break;
     case $path === '/logout':
         logoutUser();
         header('Location: /');
@@ -126,6 +136,9 @@ switch (true) {
         break;
     case preg_match('#^/api/profile$#', $path):
         require __DIR__ . '/api/profile.php';
+        break;
+    case preg_match('#^/api/network$#', $path):
+        require __DIR__ . '/api/network.php';
         break;
 
     // Existing API routes

@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS `users` (
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `last_login` DATETIME DEFAULT NULL,
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `is_admin` TINYINT(1) NOT NULL DEFAULT 0,
+    `space_limit_mb` INT NOT NULL DEFAULT 100,
+    `is_public` TINYINT(1) NOT NULL DEFAULT 0,
+    `typing_to` INT DEFAULT NULL,
+    `typing_at` DATETIME DEFAULT NULL,
     INDEX `idx_email` (`email`),
     INDEX `idx_profile_slug` (`profile_slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -104,4 +109,36 @@ CREATE TABLE IF NOT EXISTS `csrf_tokens` (
     `expires_at` DATETIME NOT NULL,
     INDEX `idx_token` (`token`),
     INDEX `idx_expires` (`expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Connections Table (Networking)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `connections` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `requester_id` INT UNSIGNED NOT NULL,
+    `receiver_id` INT UNSIGNED NOT NULL,
+    `status` ENUM('pending', 'accepted', 'rejected') NOT NULL DEFAULT 'pending',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requester_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `unique_connection` (`requester_id`, `receiver_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Messages Table (Networking)
+-- ============================================
+CREATE TABLE IF NOT EXISTS `messages` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `sender_id` INT UNSIGNED NOT NULL,
+    `receiver_id` INT UNSIGNED NOT NULL,
+    `message` TEXT NOT NULL,
+    `is_read` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_sender` (`sender_id`),
+    INDEX `idx_receiver` (`receiver_id`),
+    INDEX `idx_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
