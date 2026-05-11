@@ -34,12 +34,13 @@ if (!empty($query)) {
     .search-btn {
         padding: 0.75rem 1.5rem;
         border-radius: 8px;
+        justify-content: center;
     }
 
     @media (max-width: 600px) {
         .search-form-container {
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
         }
         .search-btn {
             width: 100%;
@@ -47,6 +48,11 @@ if (!empty($query)) {
         .search-result-card {
             flex-direction: column;
             align-items: stretch !important;
+            padding: 1rem !important;
+            gap: 0.75rem !important;
+        }
+        .search-result-card > div:first-child {
+            width: 100%;
         }
         .search-result-card .btn {
             width: 100%;
@@ -70,10 +76,10 @@ if (!empty($query)) {
         </h3>
 
         <?php if (count($results) > 0): ?>
-            <div style="display: grid; gap: 1rem;">
+            <div style="display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr);">
                 <?php foreach ($results as $profile): ?>
-                    <div class="search-result-card" style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="search-result-card" style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
                             <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: <?php echo htmlspecialchars($profile['avatar_color']); ?>; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem; flex-shrink: 0;">
                                 <?php if (!empty($profile['avatar_path'])): ?>
                                     <img src="<?php echo htmlspecialchars($profile['avatar_path']); ?>" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
@@ -81,19 +87,19 @@ if (!empty($query)) {
                                     <?php echo strtoupper(substr($profile['full_name'], 0, 1)); ?>
                                 <?php endif; ?>
                             </div>
-                            <div>
-                                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a;"><?php echo htmlspecialchars($profile['full_name']); ?></h4>
+                            <div style="min-width: 0; flex: 1;">
+                                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($profile['full_name']); ?></h4>
                                 <?php if (!empty($profile['profile_slug'])): ?>
-                                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 500;">@<?php echo htmlspecialchars($profile['profile_slug']); ?></div>
+                                    <div style="font-size: 0.85rem; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@<?php echo htmlspecialchars($profile['profile_slug']); ?></div>
                                 <?php endif; ?>
                                 <?php if (!empty($profile['work_experience'])): ?>
-                                    <div style="font-size: 0.85rem; color: #475569; margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                                    <div style="font-size: 0.85rem; color: #475569; margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
                                         <?php echo htmlspecialchars($profile['work_experience']); ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <a href="/u/<?php echo htmlspecialchars($profile['profile_slug']); ?>" class="btn btn-primary" target="_blank" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Profile</a>
+                        <a href="/u/<?php echo htmlspecialchars($profile['profile_slug']); ?>" class="btn btn-primary" target="_blank" style="padding: 0.5rem 1rem; font-size: 0.9rem; flex-shrink: 0;">View Profile</a>
                     </div>
                 <?php endforeach; ?>
             </div>
