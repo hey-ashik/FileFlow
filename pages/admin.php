@@ -38,7 +38,7 @@ if ($view === 'overview') {
             $stmtF->execute([$date]);
             $chartDataFolders[] = $stmtF->fetchColumn();
             
-            $stmtFi = $db->prepare("SELECT COUNT(*) FROM files WHERE DATE(created_at) = ?");
+            $stmtFi = $db->prepare("SELECT COUNT(*) FROM files WHERE DATE(uploaded_at) = ?");
             $stmtFi->execute([$date]);
             $chartDataFiles[] = $stmtFi->fetchColumn();
         } catch (Exception $e) {
@@ -568,6 +568,7 @@ footer, .footer {
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
+                (function() {
                     const chartDataFolders = <?= json_encode($chartDataFolders) ?>;
                     const chartDataFiles = <?= json_encode($chartDataFiles) ?>;
                     const chartLabels = <?= json_encode($chartLabels) ?>;
@@ -636,6 +637,7 @@ footer, .footer {
                         }
                         adminChart.update();
                     });
+                })();
                 </script>
             </div>
 
@@ -1039,9 +1041,10 @@ function closeEditUserModal() {
     document.getElementById('edit-user-modal').style.display = 'none';
 }
 
-const editUserForm = document.getElementById('edit-user-form');
-if(editUserForm) {
-    editUserForm.addEventListener('submit', async (e) => {
+(function() {
+    const editUserForm = document.getElementById('edit-user-form');
+    if(editUserForm) {
+        editUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-save-user');
         btn.disabled = true;
@@ -1069,6 +1072,7 @@ if(editUserForm) {
         }
     });
 }
+})();
 
 async function deleteFolder(folderId) {
     customConfirm(
@@ -1146,9 +1150,10 @@ async function deleteProfileCard(userId) {
 }
 
 // Search Functionality
-const userSearch = document.getElementById('user-search');
-if (userSearch) {
-    userSearch.addEventListener('input', (e) => {
+(function() {
+    const userSearch = document.getElementById('user-search');
+    if (userSearch) {
+        userSearch.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.user-row').forEach(row => {
             const dataSearch = row.getAttribute('data-search') || '';
@@ -1195,6 +1200,7 @@ if (profileSearch) {
         });
     });
 }
+})();
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
