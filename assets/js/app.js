@@ -246,7 +246,7 @@ function initNavbar() {
                 toggle.classList.remove('active');
             }
         });
-
+        
         // Auto-close menu when an option is selected on mobile
         const navItems = links.querySelectorAll('.nav-link, .nav-dropdown-item');
         navItems.forEach(item => {
@@ -482,7 +482,6 @@ async function handleFiles(files) {
     const folderId = document.getElementById('folder-id')?.value;
     if (!folderId) return;
 
-    // Validate on client side
     const validFiles = [];
     for (let i = 0; i < files.length && i < MAX_FILES_PER_UPLOAD; i++) {
         const file = files[i];
@@ -500,7 +499,6 @@ async function handleFiles(files) {
 
     if (!validFiles.length) return;
 
-    // Show progress UI
     const progressArea = document.getElementById('upload-progress-area');
     const progressBar = document.getElementById('upload-progress-bar');
     const progressText = document.getElementById('upload-progress-text');
@@ -512,103 +510,157 @@ async function handleFiles(files) {
     if (progressBar) { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; }
     if (progressText) progressText.textContent = '0%';
 
-    // Force reflow then enable smooth transition
     progressBar?.offsetWidth;
     if (progressBar) progressBar.style.transition = 'width 0.15s linear';
 
     const totalFiles = validFiles.length;
-    const totalBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
+    let totalBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
+    let loadedBytes = new Array(totalFiles).fill(0);
     let successCount = 0;
     let failCount = 0;
-    const startTime = Date.now();
+    
+    const activeUploads = new Array(totalFiles).fill(null);
+    const fileStates = new Array(totalFiles).fill('pending');
     isUploading = true;
 
     if (progressHeader) progressHeader.textContent = `Uploading ${totalFiles} file(s)...`;
 
-    // Create UI items for all files
     const fileItems = [];
     for (let i = 0; i < totalFiles; i++) {
         const item = document.createElement('div');
         item.className = 'upload-file-item';
-        item.innerHTML = `<span>${validFiles[i].name}</span><span class="file-status">Uploading...</span>`;
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.justifyContent = 'space-between';
+        
+        item.innerHTML = `
+            <div style="flex:1; min-width:0; margin-right:10px; display:flex; flex-direction:column; gap:4px;">
+                <div class="upload-file-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500;" title="${validFiles[i].name}">${validFiles[i].name}</div>
+                <div class="file-status" style="font-size:0.8rem; color:var(--gray-500);">Waiting...</div>
+            </div>
+            <button type="button" class="btn-cancel-upload" style="background:none; border:none; color:var(--red-500); cursor:pointer; padding:4px; flex-shrink:0;" title="Cancel Upload">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        `;
         if (fileList) fileList.appendChild(item);
         fileItems.push(item);
-    }
-
-    try {
-        const result = await uploadBatch(validFiles, folderId, {
-            onProgress: (loaded, total) => {
-                const overallPct = totalBytes > 0 ? Math.min(Math.round((loaded / total) * 100), 99) : 0;
-                if (progressBar) progressBar.style.width = overallPct + '%';
-                if (progressText) progressText.textContent = overallPct + '%';
-
-                const timeElapsed = (Date.now() - startTime) / 1000;
-                if (timeElapsed > 0.5 && loaded > 0) {
-                    const speedBps = loaded / timeElapsed;
-                    const bytesRemaining = total - loaded;
-                    const timeRemainingSec = Math.max(0, bytesRemaining / speedBps);
-
-                    let timeStr = "";
-                    if (timeRemainingSec >= 3600) {
-                        timeStr = Math.floor(timeRemainingSec / 3600) + "h " + Math.floor((timeRemainingSec % 3600) / 60) + "m";
-                    } else if (timeRemainingSec >= 60) {
-                        timeStr = Math.floor(timeRemainingSec / 60) + "m " + Math.floor(timeRemainingSec % 60) + "s";
-                    } else {
-                        timeStr = Math.floor(timeRemainingSec) + "s";
-                    }
-
-                    fileItems.forEach(item => {
-                        if (item.className === 'upload-file-item') {
-                            item.querySelector('.file-status').textContent = `Uploading... ${overallPct}% (${timeStr} remaining)`;
-                        }
-                    });
-                } else {
-                    fileItems.forEach(item => {
-                        if (item.className === 'upload-file-item') {
-                            item.querySelector('.file-status').textContent = `Uploading... ${overallPct}%`;
-                        }
-                    });
-                }
+        
+        const cancelBtn = item.querySelector('.btn-cancel-upload');
+        cancelBtn.addEventListener('click', () => {
+            if (activeUploads[i]) {
+                activeUploads[i].abort();
+            } else if (fileStates[i] === 'pending') {
+                fileStates[i] = 'cancelled';
+                item.className = 'upload-file-item error';
+                item.querySelector('.file-status').textContent = 'Cancelled';
+                cancelBtn.style.display = 'none';
+                totalBytes -= validFiles[i].size;
+                updateOverallProgress();
             }
         });
-
-        if (result.success && result.results) {
-            result.results.forEach((r, idx) => {
-                const item = fileItems[idx];
-                if (r.success && r.file) {
-                    addFileCard(r.file);
-                    successCount++;
-                    if (item) {
-                        item.className = 'upload-file-item success';
-                        item.querySelector('.file-status').textContent = 'Uploaded';
-                    }
-                } else {
-                    failCount++;
-                    if (item) {
-                        item.className = 'upload-file-item error';
-                        item.querySelector('.file-status').textContent = (r.errors?.[0] || 'Failed');
-                    }
-                }
-            });
-            if (result.csrf_token) updateCSRF(result.csrf_token);
-        } else {
-            // Whole batch failed (e.g. storage limit exceeded)
-            fileItems.forEach(item => {
-                failCount++;
-                item.className = 'upload-file-item error';
-                item.querySelector('.file-status').textContent = (result.errors?.[0] || 'Failed');
-            });
-            if (result.csrf_token) updateCSRF(result.csrf_token);
-        }
-    } catch (err) {
-        fileItems.forEach(item => {
-            failCount++;
-            item.className = 'upload-file-item error';
-            item.querySelector('.file-status').textContent = 'Network error';
-        });
     }
 
-    // Final state: 100%
+    const updateOverallProgress = () => {
+        const totalLoaded = loadedBytes.reduce((sum, b) => sum + b, 0);
+        const overallPct = totalBytes > 0 ? Math.min(Math.round((totalLoaded / totalBytes) * 100), 99) : 0;
+        if (progressBar) progressBar.style.width = overallPct + '%';
+        if (progressText) progressText.textContent = overallPct + '%';
+    };
+
+    const uploadPromises = validFiles.map((file, i) => {
+        return new Promise(async (resolve) => {
+            if (fileStates[i] === 'cancelled') return resolve();
+            
+            fileStates[i] = 'uploading';
+            const item = fileItems[i];
+            const statusEl = item.querySelector('.file-status');
+            const cancelBtn = item.querySelector('.btn-cancel-upload');
+            const startTime = Date.now();
+            
+            try {
+                const result = await new Promise((res, rej) => {
+                    const formData = new FormData();
+                    formData.append('folder_id', folderId);
+                    formData.append('csrf_token', getCSRF());
+                    formData.append('files[]', file);
+
+                    const xhr = new XMLHttpRequest();
+                    activeUploads[i] = xhr;
+                    xhr.open('POST', '/api/upload');
+
+                    xhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            loadedBytes[i] = e.loaded;
+                            updateOverallProgress();
+                            
+                            const pct = Math.round((e.loaded / e.total) * 100);
+                            const timeElapsed = (Date.now() - startTime) / 1000;
+                            if (timeElapsed > 0.5 && e.loaded > 0) {
+                                const speedBps = e.loaded / timeElapsed;
+                                const bytesRemaining = e.total - e.loaded;
+                                const timeRemainingSec = Math.max(0, bytesRemaining / speedBps);
+
+                                let timeStr = "";
+                                if (timeRemainingSec >= 3600) {
+                                    timeStr = Math.floor(timeRemainingSec / 3600) + "h " + Math.floor((timeRemainingSec % 3600) / 60) + "m";
+                                } else if (timeRemainingSec >= 60) {
+                                    timeStr = Math.floor(timeRemainingSec / 60) + "m " + Math.floor(timeRemainingSec % 60) + "s";
+                                } else {
+                                    timeStr = Math.floor(timeRemainingSec) + "s";
+                                }
+                                statusEl.textContent = `Uploading... ${pct}% (${timeStr} remaining)`;
+                            } else {
+                                statusEl.textContent = `Uploading... ${pct}%`;
+                            }
+                        }
+                    });
+
+                    xhr.addEventListener('load', () => {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            res(data);
+                        } catch (err) {
+                            rej(new Error('Invalid response'));
+                        }
+                    });
+
+                    xhr.addEventListener('error', () => rej(new Error('Network error')));
+                    xhr.addEventListener('abort', () => rej(new Error('Upload cancelled')));
+
+                    xhr.send(formData);
+                });
+
+                if (result.success && result.results && result.results[0]?.success) {
+                    fileStates[i] = 'success';
+                    addFileCard(result.results[0].file);
+                    successCount++;
+                    item.className = 'upload-file-item success';
+                    statusEl.textContent = 'Uploaded';
+                    cancelBtn.style.display = 'none';
+                } else {
+                    fileStates[i] = 'error';
+                    failCount++;
+                    item.className = 'upload-file-item error';
+                    statusEl.textContent = result.errors?.[0] || result.results?.[0]?.errors?.[0] || 'Failed';
+                    cancelBtn.style.display = 'none';
+                }
+                if (result.csrf_token) updateCSRF(result.csrf_token);
+
+            } catch (err) {
+                fileStates[i] = 'error';
+                if (err.message !== 'Upload cancelled') failCount++;
+                item.className = 'upload-file-item error';
+                statusEl.textContent = err.message;
+                cancelBtn.style.display = 'none';
+            }
+            
+            activeUploads[i] = null;
+            resolve();
+        });
+    });
+
+    await Promise.all(uploadPromises);
+
     if (progressBar) progressBar.style.width = '100%';
     if (progressText) progressText.textContent = '100%';
     if (progressHeader) progressHeader.textContent = 'Upload Complete';
@@ -620,55 +672,19 @@ async function handleFiles(files) {
         const empty = document.getElementById('files-empty');
         if (empty) empty.remove();
     }
+    
     if (failCount > 0) {
         showToast(`${failCount} file${failCount > 1 ? 's' : ''} failed to upload.`, 'error');
     }
 
-    // Reset file input
     const fileInput = document.getElementById('file-input');
     if (fileInput) fileInput.value = '';
 
     isUploading = false;
 
-    // Hide progress after delay
     setTimeout(() => {
         if (progressArea) progressArea.style.display = 'none';
     }, 4000);
-}
-
-/**
- * Upload a batch of files via XHR with real-time progress callback
- */
-function uploadBatch(files, folderId, { onProgress }) {
-    return new Promise((resolve, reject) => {
-        const formData = new FormData();
-        formData.append('folder_id', folderId);
-        formData.append('csrf_token', getCSRF());
-        files.forEach(file => formData.append('files[]', file));
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/upload');
-
-        xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable && onProgress) {
-                onProgress(e.loaded, e.total);
-            }
-        });
-
-        xhr.addEventListener('load', () => {
-            try {
-                const data = JSON.parse(xhr.responseText);
-                resolve(data);
-            } catch (e) {
-                reject(new Error('Invalid response'));
-            }
-        });
-
-        xhr.addEventListener('error', () => reject(new Error('Network error')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
-
-        xhr.send(formData);
-    });
 }
 
 function addFileCard(file) {
@@ -697,7 +713,10 @@ function addFileCard(file) {
                 <span class="file-date">${file.uploaded_at}</span>
             </div>
         </div>
-        <div class="file-card-actions">
+        <div class="file-card-actions" style="display:flex; gap:6px;">
+            <a href="/api/download?id=${file.id}&preview=1" class="btn btn-sm btn-outline" title="Preview" target="_blank" style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </a>
             <a href="/api/download?id=${file.id}" class="btn btn-sm btn-download" title="Download" id="btn-download-${file.id}" download>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </a>

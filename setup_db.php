@@ -16,6 +16,11 @@ try {
     } catch (PDOException $e) { /* Ignore if exists */ }
 
     try {
+        $db->exec("ALTER TABLE users ADD COLUMN file_upload_limit_mb INT NOT NULL DEFAULT 50");
+        echo "Added file_upload_limit_mb column.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
         $db->exec("ALTER TABLE users ADD COLUMN is_public TINYINT(1) NOT NULL DEFAULT 0");
         echo "Added is_public column.\n";
     } catch (PDOException $e) { /* Ignore if exists */ }

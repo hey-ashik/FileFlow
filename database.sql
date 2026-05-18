@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     `is_admin` TINYINT(1) NOT NULL DEFAULT 0,
     `space_limit_mb` INT NOT NULL DEFAULT 100,
+    `file_upload_limit_mb` INT NOT NULL DEFAULT 50,
     `is_public` TINYINT(1) NOT NULL DEFAULT 0,
     `typing_to` INT DEFAULT NULL,
     `typing_at` DATETIME DEFAULT NULL,

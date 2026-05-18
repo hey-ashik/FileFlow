@@ -97,6 +97,17 @@ $pageDescription = 'View and download files from "' . htmlspecialchars($folder['
 $files = getFilesByFolderId($folder['id']);
 $folderUrl = APP_URL . '/' . $folder['slug'];
 
+$customMaxFileSize = MAX_FILE_SIZE;
+if (!empty($folder['user_id'])) {
+    $db = getDB();
+    $stmtUser = $db->prepare("SELECT file_upload_limit_mb FROM users WHERE id = ?");
+    $stmtUser->execute([$folder['user_id']]);
+    $uRow = $stmtUser->fetch();
+    if ($uRow && isset($uRow['file_upload_limit_mb'])) {
+        $customMaxFileSize = (int)$uRow['file_upload_limit_mb'] * 1024 * 1024;
+    }
+}
+
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -237,7 +248,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <h3 class="dropzone-title">Drop files here or click to upload</h3>
                     <p class="dropzone-subtitle">Supports PDF, DOCX, PPTX, XLSX, MP3, ZIP, JPG, PNG, WEBP</p>
-                    <p class="dropzone-limit">Max <?php echo formatFileSize(MAX_FILE_SIZE); ?> per file • Up to
+                    <p class="dropzone-limit">Max <?php echo formatFileSize($customMaxFileSize); ?> per file • Up to
                         <?php echo MAX_FILES_PER_UPLOAD; ?> files at once
                     </p>
                     <input type="file" id="file-input" class="file-input" multiple
@@ -311,7 +322,14 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span class="file-date"><?php echo timeAgo($file['uploaded_at']); ?></span>
                             </div>
                         </div>
-                        <div class="file-card-actions">
+                        <div class="file-card-actions" style="display:flex; gap:6px;">
+                            <a href="/api/download?id=<?php echo $file['id']; ?>&preview=1" class="btn btn-sm btn-outline"
+                                title="Preview" target="_blank" style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </a>
                             <a href="/api/download?id=<?php echo $file['id']; ?>" class="btn btn-sm btn-download"
                                 title="Download" id="btn-download-<?php echo $file['id']; ?>" download>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

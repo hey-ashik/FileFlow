@@ -58,6 +58,8 @@ if ($view === 'overview') {
     $unassignedFolders = $db->query("
         SELECT * FROM folders WHERE user_id IS NULL ORDER BY created_at DESC
     ")->fetchAll();
+} elseif ($view === 'maintenance') {
+    $maintenanceMode = file_exists(__DIR__ . '/../config/maintenance.flag');
 }
 
 ?>
@@ -482,6 +484,15 @@ footer, .footer {
                 Support Chat
             </a>
         </nav>
+        <div class="admin-sidebar-title" style="margin-top: 1rem;">System</div>
+        <nav class="admin-nav">
+            <a href="/admin?view=maintenance" class="admin-nav-item <?= $view === 'maintenance' ? 'active' : '' ?>">
+                <svg class="admin-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Maintenance Mode
+            </a>
+        </nav>
     </aside>
 
     <!-- Main Content -->
@@ -500,6 +511,7 @@ footer, .footer {
                 if ($view === 'users') echo 'User Management';
                 elseif ($view === 'profiles') echo 'User Profile Cards';
                 elseif ($view === 'unassigned') echo 'Unassigned Folders';
+                elseif ($view === 'maintenance') echo 'Maintenance Mode';
                 else echo 'Dashboard Overview';
                 ?>
             </h1>
@@ -772,7 +784,7 @@ footer, .footer {
                                     $usagePct = $u['space_limit_mb'] > 0 ? min(100, round(($u['total_used_size'] / ($u['space_limit_mb'] * 1024 * 1024)) * 100)) : 0;
                                     ?>
                                     <div style="font-weight: 600; color: var(--admin-text-main);"><?= formatFileSize($u['total_used_size']) ?> used</div>
-                                    <div style="font-size: 0.875rem; color: var(--admin-text-muted); margin-top: 2px;">Limit: <?= $u['space_limit_mb'] ?> MB • <?= $u['folder_count'] ?> folders</div>
+                                    <div style="font-size: 0.875rem; color: var(--admin-text-muted); margin-top: 2px;">Space Limit: <?= $u['space_limit_mb'] ?> MB • Upload Limit: <?= $u['file_upload_limit_mb'] ?? 50 ?> MB • <?= $u['folder_count'] ?> folders</div>
                                     <div style="width: 120px; height: 6px; background: #e2e8f0; border-radius: 4px; margin-top: 6px; overflow: hidden;">
                                         <div style="height: 100%; width: <?= $usagePct ?>%; background: <?= $usagePct > 90 ? '#ef4444' : '#3b82f6' ?>;"></div>
                                     </div>
@@ -785,7 +797,7 @@ footer, .footer {
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                        <button class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="openEditUserModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['full_name'])) ?>', <?= $u['space_limit_mb'] ?>)">Edit Limits</button>
+                                        <button class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="openEditUserModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['full_name'])) ?>', <?= $u['space_limit_mb'] ?>, <?= $u['file_upload_limit_mb'] ?? 50 ?>)">Edit Limits</button>
                                         <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="toggleUserFolders(<?= $u['id'] ?>)">Folders</button>
                                         <button class="btn btn-sm btn-outline-danger" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteAllUserFolders(<?= $u['id'] ?>)">Clear All</button>
                                     </div>
@@ -991,6 +1003,24 @@ footer, .footer {
                     </div>
                 <?php endif; ?>
             </div>
+
+        <?php elseif ($view === 'maintenance'): ?>
+            <div class="admin-section" style="padding: 2rem;">
+                <h3 class="admin-section-title" style="margin-bottom: 1rem;">System Maintenance Mode</h3>
+                <p class="admin-section-subtitle" style="margin-bottom: 2rem;">When maintenance mode is active, only administrators can access the site. Other users will see a maintenance page.</p>
+                
+                <div style="background: #f8fafc; border: 1px solid var(--admin-border); padding: 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--admin-text-main); font-size: 1.1rem; margin-bottom: 0.25rem;">Maintenance Mode</div>
+                        <div style="font-size: 0.875rem; color: var(--admin-text-muted);">Current Status: <strong style="color: <?= $maintenanceMode ? '#ef4444' : '#22c55e' ?>;"><?= $maintenanceMode ? 'Active (Site Offline)' : 'Inactive (Site Online)' ?></strong></div>
+                    </div>
+                    <div style="flex-shrink: 0;">
+                        <button onclick="toggleMaintenanceMode()" class="admin-btn <?= $maintenanceMode ? 'admin-btn-outline' : 'admin-btn-primary' ?>" style="<?= $maintenanceMode ? 'border-color: #ef4444; color: #ef4444;' : '' ?>">
+                            <?= $maintenanceMode ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode' ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
         <?php endif; ?>
     </main>
 </div>
@@ -1008,6 +1038,10 @@ footer, .footer {
             <div class="form-group mb-4">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--admin-text-main);">Space Limit (MB)</label>
                 <input type="number" id="edit-space-limit" name="space_limit_mb" min="1" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none;">
+            </div>
+            <div class="form-group mb-4">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--admin-text-main);">File Upload Limit (MB)</label>
+                <input type="number" id="edit-upload-limit" name="file_upload_limit_mb" min="1" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none;">
             </div>
             <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
                 <button type="button" class="admin-btn admin-btn-outline" onclick="closeEditUserModal()">Cancel</button>
@@ -1030,10 +1064,11 @@ function toggleUserFolders(userId) {
     }
 }
 
-function openEditUserModal(userId, name, limit) {
+function openEditUserModal(userId, name, limit, uploadLimit) {
     document.getElementById('edit-user-id').value = userId;
     document.getElementById('edit-user-name').value = name;
     document.getElementById('edit-space-limit').value = limit;
+    document.getElementById('edit-upload-limit').value = uploadLimit;
     document.getElementById('edit-user-modal').style.display = 'flex';
 }
 
@@ -1146,6 +1181,33 @@ async function deleteProfileCard(userId) {
                 showToast('Network error', 'error');
             }
         }
+    );
+}
+
+async function toggleMaintenanceMode() {
+    customConfirm(
+        'Toggle Maintenance Mode',
+        'Are you sure you want to change the maintenance mode status?',
+        async () => {
+            const formData = new FormData();
+            formData.append('csrf_token', getCSRF());
+            
+            try {
+                const res = await fetch('/api/admin/toggle-maintenance', { method: 'POST', body: formData });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Maintenance mode updated.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.errors?.[0] || 'Update failed', 'error');
+                }
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        },
+        'No',
+        'Yes',
+        '#3b82f6'
     );
 }
 

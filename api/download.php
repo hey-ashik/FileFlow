@@ -41,8 +41,31 @@ try {
 // Secure download headers
 $safeFilename = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $file['original_name']);
 
-header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $safeFilename . '"');
+$isPreview = isset($_GET['preview']) && $_GET['preview'] == 1;
+$disposition = $isPreview ? 'inline' : 'attachment';
+
+if ($isPreview) {
+    $ext = strtolower(pathinfo($file['original_name'], PATHINFO_EXTENSION));
+    $mimeTypes = [
+        'pdf' => 'application/pdf',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'mp3' => 'audio/mpeg',
+        'wav' => 'audio/wav',
+        'txt' => 'text/plain'
+    ];
+    $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
+    header('Content-Type: ' . $contentType);
+} else {
+    header('Content-Type: application/octet-stream');
+}
+
+header('Content-Disposition: ' . $disposition . '; filename="' . $safeFilename . '"');
 header('Content-Length: ' . filesize($filePath));
 header('Content-Transfer-Encoding: binary');
 header('Cache-Control: no-cache, no-store, must-revalidate');

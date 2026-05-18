@@ -161,20 +161,15 @@ if (!empty($user['profile_slug'])) {
                     Resume/CV (PDF Formet)</label>
                 <div class="cv-actions">
                     <input type="file" id="cv-input" accept=".pdf,.doc,.docx" style="display: none;">
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('cv-input').click()"
-                        style="height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">Select
-                        File</button>
+                    <button type="button" class="btn btn-primary"
+                        onclick="document.getElementById('cv-input').click()" style="height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">Select File</button>
                     <?php if (!empty($user['cv_path'])): ?>
                         <a id="view-cv-btn" href="<?php echo htmlspecialchars($user['cv_path']); ?>" target="_blank"
-                            class="btn btn-primary"
-                            style="background: <?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>; text-decoration: none; height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">View
-                            CV/Resume</a>
-                        <button type="button" id="remove-cv-btn" class="btn" onclick="removeCV()"
-                            style="background: #ef4444; color: white; height: 44px; min-width: 100px; justify-content: center; box-sizing: border-box;">Remove</button>
+                            class="btn btn-primary" style="background: <?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>; text-decoration: none; height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">View CV/Resume</a>
+                        <button type="button" id="remove-cv-btn" class="btn" onclick="removeCV()" style="background: #ef4444; color: white; height: 44px; min-width: 100px; justify-content: center; box-sizing: border-box;">Remove</button>
                     <?php else: ?>
                         <a id="view-cv-btn" href="#" target="_blank" class="btn btn-primary"
-                            style="background: <?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>; text-decoration: none; display: none; height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">View
-                            Current CV</a>
+                            style="background: <?php echo htmlspecialchars($user['cv_button_color'] ?? '#16a34a'); ?>; text-decoration: none; display: none; height: 44px; min-width: 160px; justify-content: center; box-sizing: border-box;">View Current CV</a>
                         <button type="button" id="remove-cv-btn" class="btn" onclick="removeCV()"
                             style="background: #ef4444; color: white; height: 44px; min-width: 100px; justify-content: center; box-sizing: border-box; display: none;">Remove</button>
                     <?php endif; ?>

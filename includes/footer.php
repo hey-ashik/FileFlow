@@ -36,9 +36,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for seamless sharing. Developed by <a
-                href="https://wa.me/8801792250709" target="_blank"
-                style="color: var(--green-400); font-weight: 600;">Ashikul Islam</a></p>
+        <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for seamless sharing. Developed by <a href="https://wa.me/8801792250709" target="_blank" style="color: var(--green-400); font-weight: 600;">Ashikul Islam</a></p>
     </div>
 </footer>
 
@@ -74,12 +72,12 @@
 <script>
     const APP_URL = '<?php echo APP_URL; ?>';
     var CSRF_TOKEN = '<?php echo $csrfToken; ?>';
-    const MAX_FILE_SIZE = <?php echo MAX_FILE_SIZE; ?>;
+    const MAX_FILE_SIZE = <?php echo isset($customMaxFileSize) ? $customMaxFileSize : MAX_FILE_SIZE; ?>;
     const MAX_FILES_PER_UPLOAD = <?php echo MAX_FILES_PER_UPLOAD; ?>;
     const ALLOWED_EXTENSIONS = <?php echo json_encode(array_keys(ALLOWED_EXTENSIONS)); ?>;
 
     // Custom Confirm Function
-    window.customConfirm = function (title, message, onConfirm) {
+    window.customConfirm = function (title, message, onConfirm, cancelText = 'Cancel', okText = 'Delete', okColor = '#dc2626') {
         const modal = document.getElementById('custom-confirm-modal');
         const modalContent = modal.querySelector('.modal-content');
         document.getElementById('confirm-modal-title').textContent = title;
@@ -93,6 +91,11 @@
 
         const btnCancel = document.getElementById('confirm-modal-cancel');
         const btnOk = document.getElementById('confirm-modal-ok');
+        
+        btnCancel.textContent = cancelText;
+        btnOk.textContent = okText;
+        btnOk.style.background = okColor;
+        btnOk.style.boxShadow = `0 2px 8px ${okColor}4D`;
 
         const cleanup = () => {
             modal.style.opacity = '0';

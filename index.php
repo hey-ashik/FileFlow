@@ -43,6 +43,16 @@ $basePath = '';
 $path = substr($path, strlen($basePath));
 $path = $path ?: '/';
 
+// Maintenance mode check
+if (file_exists(__DIR__ . '/config/maintenance.flag') && !isAdmin()) {
+    if (strpos($path, '/api/') === 0 && $path !== '/api/auth/login') {
+        jsonResponse(['success' => false, 'errors' => ['System is currently under maintenance.']], 503);
+    } else if ($path !== '/login' && $path !== '/api/auth/login') {
+        require __DIR__ . '/pages/maintenance.php';
+        exit;
+    }
+}
+
 // Route handling
 switch (true) {
     case $path === '/' || $path === '':
@@ -173,6 +183,9 @@ switch (true) {
         break;
     case preg_match('#^/api/admin/delete-profile-card$#', $path):
         require __DIR__ . '/api/admin-delete-profile-card.php';
+        break;
+    case preg_match('#^/api/admin/toggle-maintenance$#', $path):
+        require __DIR__ . '/api/admin-toggle-maintenance.php';
         break;
         
     case preg_match('#^/api/user/delete-folder$#', $path):

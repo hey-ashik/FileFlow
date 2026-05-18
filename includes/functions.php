@@ -34,6 +34,12 @@ function setupAdminAndSchema(): void {
         }
 
         try {
+            $db->query("SELECT file_upload_limit_mb FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN file_upload_limit_mb INT NOT NULL DEFAULT 50");
+        }
+
+        try {
             $db->query("SELECT avatar_path FROM users LIMIT 1");
         } catch (PDOException $e) {
             $db->exec("ALTER TABLE users 
@@ -390,7 +396,7 @@ function validateCSRFToken(string $token): bool {
 /**
  * Validate uploaded file
  */
-function validateFile(array $file): array {
+function validateFile(array $file, int $maxSizeBytes = MAX_FILE_SIZE): array {
     $errors = [];
     
     // Check for upload errors
@@ -409,8 +415,8 @@ function validateFile(array $file): array {
     }
     
     // Check file size
-    if ($file['size'] > MAX_FILE_SIZE) {
-        $errors[] = 'File size exceeds the maximum limit of ' . formatFileSize(MAX_FILE_SIZE) . '.';
+    if ($file['size'] > $maxSizeBytes) {
+        $errors[] = 'File size exceeds the maximum limit of ' . formatFileSize($maxSizeBytes) . '.';
     }
     
     if ($file['size'] === 0) {
@@ -453,8 +459,8 @@ function validateFile(array $file): array {
 /**
  * Handle file upload
  */
-function uploadFile(array $file, int $folderId, string $folderSlug): array {
-    $errors = validateFile($file);
+function uploadFile(array $file, int $folderId, string $folderSlug, int $maxSizeBytes = MAX_FILE_SIZE): array {
+    $errors = validateFile($file, $maxSizeBytes);
     if (!empty($errors)) {
         return ['success' => false, 'errors' => $errors];
     }

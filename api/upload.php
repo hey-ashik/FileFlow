@@ -70,10 +70,11 @@ if ($fileCount > MAX_FILES_PER_UPLOAD) {
 if (!empty($folder['user_id'])) {
     $stats = getUserDashboardStats($folder['user_id']);
     
-    $stmtUser = $db->prepare("SELECT space_limit_mb FROM users WHERE id = ?");
+    $stmtUser = $db->prepare("SELECT space_limit_mb, file_upload_limit_mb FROM users WHERE id = ?");
     $stmtUser->execute([$folder['user_id']]);
     $uRow = $stmtUser->fetch();
     $limitMb = $uRow ? (int)$uRow['space_limit_mb'] : 100;
+    $fileUploadLimitMb = $uRow && isset($uRow['file_upload_limit_mb']) ? (int)$uRow['file_upload_limit_mb'] : 50;
     
     $totalUploadSize = 0;
     for ($i = 0; $i < $fileCount; $i++) {
@@ -94,7 +95,8 @@ for ($i = 0; $i < $fileCount; $i++) {
         'size'     => $files['size'][$i],
     ];
     
-    $result = uploadFile($file, $folder['id'], $folder['slug']);
+    $maxSizeBytes = isset($fileUploadLimitMb) ? ($fileUploadLimitMb * 1024 * 1024) : MAX_FILE_SIZE;
+    $result = uploadFile($file, $folder['id'], $folder['slug'], $maxSizeBytes);
     
     if ($result['success']) {
         $successCount++;

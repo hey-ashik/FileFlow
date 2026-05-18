@@ -36,6 +36,8 @@ define('ALLOWED_EXTENSIONS', [
     'jpeg' => ['image/jpeg'],
     'png'  => ['image/png'],
     'webp' => ['image/webp'],
+    // Videos
+    'mp4'  => ['video/mp4'],
 ]);
 
 // Folder name constraints
@@ -62,6 +64,7 @@ define('FILE_TYPE_ICONS', [
     'jpeg' => '🖼️',
     'png'  => '🖼️',
     'webp' => '🖼️',
+    'mp4'  => '🎥',
 ]);
 
 // File type categories for CSS classes
@@ -79,4 +82,5 @@ define('FILE_TYPE_CATEGORIES', [
     'jpeg' => 'image',
     'png'  => 'image',
     'webp' => 'image',
+    'mp4'  => 'video',
 ]);
