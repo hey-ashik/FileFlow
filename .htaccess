@@ -1,5 +1,27 @@
 RewriteEngine On
 
+# Increase PHP limits for large file uploads
+<IfModule mod_php.c>
+    php_value upload_max_filesize 1024M
+    php_value post_max_size 1024M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 1024M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 1024M
+    php_value post_max_size 1024M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 1024M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 1024M
+    php_value post_max_size 1024M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 1024M
+</IfModule>
 # Force HTTPS (uncomment for production)
 # RewriteCond %{HTTPS} off
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
@@ -16,6 +38,13 @@ Options -Indexes
 
 # Allow index.php
 <Files "index.php">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</Files>
+
+# Allow setup_db.php
+<Files "setup_db.php">
     <IfModule mod_authz_core.c>
         Require all granted
     </IfModule>

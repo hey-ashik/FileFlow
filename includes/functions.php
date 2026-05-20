@@ -40,6 +40,12 @@ function setupAdminAndSchema(): void {
         }
 
         try {
+            $db->query("SELECT folder_limit FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN folder_limit INT NOT NULL DEFAULT 3");
+        }
+
+        try {
             $db->query("SELECT avatar_path FROM users LIMIT 1");
         } catch (PDOException $e) {
             $db->exec("ALTER TABLE users 
@@ -83,6 +89,18 @@ function setupAdminAndSchema(): void {
             $db->exec("ALTER TABLE users ADD COLUMN profile_visits INT UNSIGNED NOT NULL DEFAULT 0");
         }
 
+        try {
+            $db->query("SELECT ip_address FROM folders LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE folders ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL");
+        }
+
+        try {
+            $db->query("SELECT device_id FROM folders LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE folders ADD COLUMN device_id VARCHAR(64) DEFAULT NULL");
+        }
+
         // Mark setup as complete to improve performance on next loads
         $email = 'ashikulislam2070@gmail.com';
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
@@ -106,6 +124,38 @@ function setupAdminAndSchema(): void {
     } catch (PDOException $e) {
         error_log("Setup error: " . $e->getMessage());
     }
+}
+
+/**
+ * Get user IP address
+ */
+function getUserIP(): string {
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        $ips = explode(',', $ip);
+        $ip = trim($ips[0]);
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+    return $ip;
+}
+
+/**
+ * Get unique device ID (stored in cookie)
+ */
+function getDeviceID(): string {
+    if (isset($_COOKIE['ff_device_id'])) {
+        return $_COOKIE['ff_device_id'];
+    }
+    
+    // Generate a new unique device ID
+    $deviceId = bin2hex(random_bytes(32)); // 64 chars
+    // Set cookie for 10 years
+    setcookie('ff_device_id', $deviceId, time() + (10 * 365 * 24 * 60 * 60), '/', '', false, true);
+    $_COOKIE['ff_device_id'] = $deviceId; // Make available for current request
+    return $deviceId;
 }
 
 /**
@@ -160,6 +210,54 @@ function folderExists(string $slug): bool {
  * Create a new folder
  */
 function createFolder(string $name, ?string $password = null, ?string $expiry = null): array {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+    if (isset($_SESSION['user_id'])) {
+        $db = getDB();
+        $userId = $_SESSION['user_id'];
+        
+        try {
+            $db->query("SELECT folder_limit FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            try {
+                $db->exec("ALTER TABLE users ADD COLUMN folder_limit INT NOT NULL DEFAULT 3");
+            } catch (PDOException $ex) {}
+        }
+        
+        $stmt = $db->prepare("SELECT folder_limit FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $userLimit = $stmt->fetchColumn();
+        if ($userLimit === false) {
+            $userLimit = 3;
+        }
+        
+        $stmtCount = $db->prepare("SELECT COUNT(*) FROM folders WHERE user_id = ?");
+        $stmtCount->execute([$userId]);
+        $currentFolders = $stmtCount->fetchColumn();
+        
+        if ($currentFolders >= $userLimit) {
+            return [
+                'success' => false,
+                'errors' => ["You have reached your limit of {$userLimit} folders. Please delete an existing folder or Buy Premium Package to increase your limit."]
+            ];
+        }
+    } else {
+        // No-account (guest) users folder limit check (detected by Device ID and IP address)
+        $db = getDB();
+        $ip = getUserIP();
+        $deviceId = getDeviceID();
+        
+        $stmtCount = $db->prepare("SELECT COUNT(*) FROM folders WHERE user_id IS NULL AND (device_id = ? OR ip_address = ?)");
+        $stmtCount->execute([$deviceId, $ip]);
+        $guestFolders = $stmtCount->fetchColumn();
+        
+        if ($guestFolders >= 3) {
+            return [
+                'success' => false,
+                'errors' => ["You have reached your limit of 3 folders. Please create an account to create more folders."]
+            ];
+        }
+    }
+
     $slug = sanitizeSlug($name);
     $displayName = htmlspecialchars(trim($name), ENT_QUOTES, 'UTF-8');
     
@@ -191,6 +289,10 @@ function createFolder(string $name, ?string $password = null, ?string $expiry = 
         if (session_status() === PHP_SESSION_NONE) session_start();
         if (isset($_SESSION['user_id'])) $userId = $_SESSION['user_id'];
         
+        // Get user IP address and Device ID
+        $ip = getUserIP();
+        $deviceId = getDeviceID();
+        
         // Handle password hashing
         $passwordHash = !empty($password) ? password_hash($password, PASSWORD_BCRYPT) : null;
         
@@ -209,12 +311,18 @@ function createFolder(string $name, ?string $password = null, ?string $expiry = 
 
         // Try with new columns
         try {
-            $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, password_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$name, $slug, $displayName, $userId, $passwordHash, $expiresAt]);
+            $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, password_hash, expires_at, ip_address, device_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$name, $slug, $displayName, $userId, $passwordHash, $expiresAt, $ip, $deviceId]);
         } catch (PDOException $colErr) {
-            // Fallback for older schema if migration hasn't run yet
-            $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$name, $slug, $displayName, $userId]);
+            try {
+                // Fallback for older schema if migration hasn't run yet
+                $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, password_hash, expires_at, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $slug, $displayName, $userId, $passwordHash, $expiresAt, $ip]);
+            } catch (PDOException $colErr2) {
+                // Older fallback
+                $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, ip_address) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $slug, $displayName, $userId, $ip]);
+            }
         }
         
         return [
@@ -437,8 +545,36 @@ function validateFile(array $file, int $maxSizeBytes = MAX_FILE_SIZE): array {
     if (!in_array($detectedMime, ALLOWED_EXTENSIONS[$ext])) {
         // Allow some flexibility for Office documents
         $officeExts = ['docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls'];
-        $officeMimes = ['application/octet-stream', 'application/zip'];
-        if (!(in_array($ext, $officeExts) && in_array($detectedMime, $officeMimes))) {
+        $officeMimes = [
+            'application/octet-stream',
+            'application/zip',
+            'application/x-zip',
+            'application/x-zip-compressed',
+            'application/vnd.ms-office',
+            'application/msword',
+            'application/vnd.ms-excel',
+            'application/vnd.ms-powerpoint',
+            'application/CDFV2',
+            'application/cdfv2-corrupt',
+            'application/x-ole-storage',
+            'application/wps-office.xls',
+            'application/wps-office.xlsx',
+            'application/wps-office.doc',
+            'application/wps-office.docx',
+            'application/wps-office.ppt',
+            'application/wps-office.pptx',
+            'text/html',
+            'text/plain',
+            'text/csv',
+            'text/xml',
+            'application/xml'
+        ];
+        
+        // Use case-insensitive matching for MIME types
+        $detectedMimeLower = strtolower($detectedMime);
+        $officeMimesLower = array_map('strtolower', $officeMimes);
+        
+        if (!(in_array($ext, $officeExts) && in_array($detectedMimeLower, $officeMimesLower))) {
             $errors[] = 'File content does not match the expected type for ".' . $ext . '".';
         }
     }
@@ -480,7 +616,25 @@ function uploadFile(array $file, int $folderId, string $folderSlug, int $maxSize
         mkdir($targetDir, 0755, true);
     }
     
-    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+    $isMergedChunk = isset($file['is_merged_chunk']) && $file['is_merged_chunk'] === true;
+    $saveSuccess = false;
+    
+    if ($isMergedChunk) {
+        if (rename($file['tmp_name'], $targetPath)) {
+            $saveSuccess = true;
+        } else {
+            if (copy($file['tmp_name'], $targetPath)) {
+                $saveSuccess = true;
+                @unlink($file['tmp_name']);
+            }
+        }
+    } else {
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $saveSuccess = true;
+        }
+    }
+    
+    if (!$saveSuccess) {
         return ['success' => false, 'errors' => ['Failed to save the uploaded file.']];
     }
     
@@ -606,4 +760,42 @@ function deleteFile(int $fileId): array {
         error_log("File deletion error: " . $e->getMessage());
         return ['success' => false, 'errors' => ['Failed to delete file.']];
     }
+}
+
+/**
+ * Determine dynamic chunk size based on server upload limits
+ */
+function getUploadChunkSize(): int {
+    $max_upload = parsePhpSize(ini_get('upload_max_filesize'));
+    $max_post = parsePhpSize(ini_get('post_max_size'));
+    $memory_limit = parsePhpSize(ini_get('memory_limit'));
+    
+    // Find the smallest limit
+    $limit = min($max_upload ?: 2 * 1024 * 1024, $max_post ?: 8 * 1024 * 1024);
+    if ($memory_limit > 0) {
+        $limit = min($limit, $memory_limit);
+    }
+    
+    // Set chunk size to 90% of the smallest limit, bounded between 1MB and 5MB
+    $chunkSize = floor($limit * 0.9);
+    if ($chunkSize < 1024 * 1024) {
+        $chunkSize = 1024 * 1024; // 1MB minimum
+    }
+    if ($chunkSize > 5 * 1024 * 1024) {
+        $chunkSize = 5 * 1024 * 1024; // 5MB maximum
+    }
+    return (int)$chunkSize;
+}
+
+function parsePhpSize(string $size): int {
+    $size = trim($size);
+    if (empty($size)) return 0;
+    $last = strtolower($size[strlen($size)-1]);
+    $val = (int)$size;
+    switch($last) {
+        case 'g': $val *= 1024;
+        case 'm': $val *= 1024;
+        case 'k': $val *= 1024;
+    }
+    return $val;
 }

@@ -10,11 +10,12 @@ $fileTypeStats = getFileTypeStats($user['id']);
 
 // Get user limits
 $db = getDB();
-$stmt = $db->prepare("SELECT space_limit_mb, file_upload_limit_mb FROM users WHERE id = ?");
+$stmt = $db->prepare("SELECT space_limit_mb, file_upload_limit_mb, folder_limit FROM users WHERE id = ?");
 $stmt->execute([$user['id']]);
 $uRow = $stmt->fetch();
 $limitMb = $uRow ? (int) $uRow['space_limit_mb'] : 100;
 $fileUploadLimitMb = $uRow && isset($uRow['file_upload_limit_mb']) ? (int) $uRow['file_upload_limit_mb'] : 50;
+$folderLimit = $uRow && isset($uRow['folder_limit']) ? (int) $uRow['folder_limit'] : 3;
 $limitBytes = $limitMb * 1024 * 1024;
 $usagePct = $limitBytes > 0 ? min(100, round(($stats['total_size'] / $limitBytes) * 100)) : 0;
 
@@ -126,6 +127,19 @@ require_once __DIR__ . '/../includes/header.php';
                     <span class="dash-stat-label">Per File Limit</span>
                 </div>
             </div>
+            <div class="dash-stat-card">
+                <div class="dash-stat-icon" style="background:#fff7ed;color:#ea580c">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        <line x1="12" y1="11" x2="12" y2="17" />
+                        <line x1="9" y1="14" x2="15" y2="14" />
+                    </svg>
+                </div>
+                <div class="dash-stat-info">
+                    <span class="dash-stat-value"><?php echo $folderLimit; ?></span>
+                    <span class="dash-stat-label">Folder Limit</span>
+                </div>
+            </div>
             <div class="dash-stat-card" id="network-speed-card">
                 <div class="dash-stat-icon" style="background:#e0e7ff;color:#4f46e5">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -133,8 +147,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </svg>
                 </div>
                 <div class="dash-stat-info">
-                    <div class="dash-stat-value"
-                        style="display: flex; gap: 8px; align-items: center; white-space: nowrap; flex-wrap: nowrap; font-size: 1.25rem; line-height: 1.2;">
+                    <div class="dash-stat-value" style="display: flex; gap: 8px; align-items: center; white-space: nowrap; flex-wrap: nowrap; font-size: 1.25rem; line-height: 1.2;">
                         <span id="dl-speed"
                             style="color:var(--green-600); font-weight:700; display:inline-flex; align-items:center; gap:2px; white-space: nowrap;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -158,9 +171,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 style="font-size:0.65rem; font-weight:600; text-transform:uppercase;">Mbps</span>
                         </span>
                     </div>
-                    <span class="dash-stat-label" id="net-type-label"
-                        style="margin-top:4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">Network
-                        Monitor</span>
+                    <span class="dash-stat-label" id="net-type-label" style="margin-top:4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">Network Monitor</span>
                 </div>
             </div>
         </div>

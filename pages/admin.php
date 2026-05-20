@@ -784,7 +784,7 @@ footer, .footer {
                                     $usagePct = $u['space_limit_mb'] > 0 ? min(100, round(($u['total_used_size'] / ($u['space_limit_mb'] * 1024 * 1024)) * 100)) : 0;
                                     ?>
                                     <div style="font-weight: 600; color: var(--admin-text-main);"><?= formatFileSize($u['total_used_size']) ?> used</div>
-                                    <div style="font-size: 0.875rem; color: var(--admin-text-muted); margin-top: 2px;">Space Limit: <?= $u['space_limit_mb'] ?> MB • Upload Limit: <?= $u['file_upload_limit_mb'] ?? 50 ?> MB • <?= $u['folder_count'] ?> folders</div>
+                                    <div style="font-size: 0.875rem; color: var(--admin-text-muted); margin-top: 2px;">Space Limit: <?= $u['space_limit_mb'] ?> MB • Upload Limit: <?= $u['file_upload_limit_mb'] ?? 50 ?> MB • <?= $u['folder_count'] ?> / <?= $u['folder_limit'] ?? 3 ?> folders</div>
                                     <div style="width: 120px; height: 6px; background: #e2e8f0; border-radius: 4px; margin-top: 6px; overflow: hidden;">
                                         <div style="height: 100%; width: <?= $usagePct ?>%; background: <?= $usagePct > 90 ? '#ef4444' : '#3b82f6' ?>;"></div>
                                     </div>
@@ -797,7 +797,7 @@ footer, .footer {
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                        <button class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="openEditUserModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['full_name'])) ?>', <?= $u['space_limit_mb'] ?>, <?= $u['file_upload_limit_mb'] ?? 50 ?>)">Edit Limits</button>
+                                        <button class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="openEditUserModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['full_name'])) ?>', <?= $u['folder_limit'] ?? 3 ?>, <?= $u['space_limit_mb'] ?>, <?= $u['file_upload_limit_mb'] ?? 50 ?>)">Edit Limits</button>
                                         <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="toggleUserFolders(<?= $u['id'] ?>)">Folders</button>
                                         <button class="btn btn-sm btn-outline-danger" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteAllUserFolders(<?= $u['id'] ?>)">Clear All</button>
                                     </div>
@@ -1036,6 +1036,10 @@ footer, .footer {
                 <input type="text" id="edit-user-name" disabled style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; background: #f8fafc; color: var(--admin-text-muted);">
             </div>
             <div class="form-group mb-4">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--admin-text-main);">Folder Limit</label>
+                <input type="number" id="edit-folder-limit" name="folder_limit" min="1" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none;">
+            </div>
+            <div class="form-group mb-4">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--admin-text-main);">Space Limit (MB)</label>
                 <input type="number" id="edit-space-limit" name="space_limit_mb" min="1" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; outline: none;">
             </div>
@@ -1064,9 +1068,10 @@ function toggleUserFolders(userId) {
     }
 }
 
-function openEditUserModal(userId, name, limit, uploadLimit) {
+function openEditUserModal(userId, name, folderLimit, limit, uploadLimit) {
     document.getElementById('edit-user-id').value = userId;
     document.getElementById('edit-user-name').value = name;
+    document.getElementById('edit-folder-limit').value = folderLimit;
     document.getElementById('edit-space-limit').value = limit;
     document.getElementById('edit-upload-limit').value = uploadLimit;
     document.getElementById('edit-user-modal').style.display = 'flex';

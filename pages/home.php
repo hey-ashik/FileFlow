@@ -23,52 +23,68 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="hero-orb hero-orb-2"></div>
         <div class="hero-orb hero-orb-3"></div>
     </div>
-    <div class="hero-content">
-        <div class="hero-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-            <span>Fast & Secure File Sharing</span>
-        </div>
-        <h1 class="hero-title">
-            Share Files <span class="gradient-text">Instantly</span>,<br>
-            No Login Required
-        </h1>
-        <p class="hero-subtitle">
-            Create a unique custom folder, upload your files, and share the link. No accounts, no hassle.<br>
-        </p>
-        <div class="hero-actions">
-            <a href="#create-section" class="btn btn-primary btn-lg" onclick="scrollToCreate(event)"
-                id="hero-cta-create">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                    <line x1="12" y1="11" x2="12" y2="17" />
-                    <line x1="9" y1="14" x2="15" y2="14" />
+    <div class="container hero-split-container">
+        <div class="hero-content-left">
+            <div class="hero-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                 </svg>
-                Create Your Folder
-            </a>
-            <a href="#features-section" class="btn btn-ghost btn-lg" id="hero-cta-features" onclick="scrollToFeatures(event)">
-                Learn More
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                </svg>
-            </a>
+                <span>Fast & Secure File Sharing</span>
+            </div>
+            <h1 class="hero-title">
+                Share Files <span class="gradient-text">Instantly</span>,<br>
+                No Login Required
+            </h1>
+            <p class="hero-subtitle">
+                Create a unique custom folder, upload your files, and share the link. No accounts, no hassle.<br>
+            </p>
+            <div class="hero-actions">
+                <a href="#create-section" class="btn btn-primary btn-lg" onclick="scrollToCreate(event)"
+                    id="hero-cta-create">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        <line x1="12" y1="11" x2="12" y2="17" />
+                        <line x1="9" y1="14" x2="15" y2="14" />
+                    </svg>
+                    Create Your Folder
+                </a>
+                <a href="#features-section" class="btn btn-ghost btn-lg" id="hero-cta-features" onclick="scrollToFeatures(event)">
+                    Learn More
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-folders"><?php echo number_format($stats['folders']); ?></span>
+                    <span class="stat-label">Folders Created</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-files"><?php echo number_format($stats['files']); ?></span>
+                    <span class="stat-label">Files Shared</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-size"><?php echo $stats['total_size']; ?></span>
+                    <span class="stat-label">Total Stored</span>
+                </div>
+            </div>
         </div>
-        <div class="hero-stats">
-            <div class="stat-item">
-                <span class="stat-value" id="stat-folders"><?php echo number_format($stats['folders']); ?></span>
-                <span class="stat-label">Folders Created</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-                <span class="stat-value" id="stat-files"><?php echo number_format($stats['files']); ?></span>
-                <span class="stat-label">Files Shared</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-                <span class="stat-value" id="stat-size"><?php echo $stats['total_size']; ?></span>
-                <span class="stat-label">Total Stored</span>
+        
+        <div class="hero-content-right">
+            <div class="video-frame-container">
+                <div class="video-frame-header">
+                    <div class="mac-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="video-frame-title">Video Tutorial</div>
+                </div>
+                <div class="video-frame-body">
+                    <iframe src="https://www.youtube.com/embed/dnK6af9gKqw?si=-ZZryoKQPR39e_XA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -142,12 +158,12 @@ require_once __DIR__ . '/../includes/header.php';
                         </button>
                     </div>
                     <div class="input-hint" id="folder-hint" style="margin-bottom: 1rem;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 16v-4" />
-                            <path d="M12 8h.01" />
-                        </svg>
+                        <!--<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"-->
+                        <!--    stroke-width="2">-->
+                        <!--    <circle cx="12" cy="12" r="10" />-->
+                        <!--    <path d="M12 16v-4" />-->
+                        <!--    <path d="M12 8h.01" />-->
+                        <!--</svg>-->
                         Use letters, numbers, hyphens, or underscores. Min <?php echo FOLDER_NAME_MIN_LENGTH; ?>
                         characters
                     </div>

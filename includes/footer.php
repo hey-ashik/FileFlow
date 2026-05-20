@@ -2,9 +2,9 @@
 
 <!-- Footer -->
 <footer class="footer">
-    <div class="footer-inner">
-        <div class="footer-brand">
-            <a href="/" class="footer-logo">
+    <!--<div class="footer-inner">-->
+    <!--    <div class="footer-brand">-->
+    <!--        <a href="/" class="footer-logo">-->
                 <!--<svg width="24" height="24" viewBox="0 0 32 32" fill="none">-->
                 <!--    <rect width="32" height="32" rx="8" fill="url(#grad2)" />-->
                 <!--    <path d="M10 20L16 8L22 20" stroke="white" stroke-width="2.5" stroke-linecap="round"-->
@@ -18,23 +18,23 @@
                 <!--        </linearGradient>-->
                 <!--    </defs>-->
                 <!--</svg>-->
-                <span>File<span class="brand-accent">Flow</span></span>
-            </a>
-            <p class="footer-desc">Secure and simple file sharing. No registration required.</p>
-        </div>
-        <div class="footer-links">
-            <div class="footer-col">
-                <h4>Platform</h4>
-                <a href="/">Home</a>
-                <a href="#create-section" onclick="scrollToCreate(event)">Create Folder</a>
-            </div>
-            <div class="footer-col">
-                <h4>Supported Files</h4>
-                <span>PDF, DOCX, PPTX, XLSX</span>
-                <span>MP3, ZIP, JPG, PNG, WEBP</span>
-            </div>
-        </div>
-    </div>
+    <!--            <span>File<span class="brand-accent">Flow</span></span>-->
+    <!--        </a>-->
+    <!--        <p class="footer-desc">Secure and simple file sharing. No registration required.</p>-->
+    <!--    </div>-->
+    <!--    <div class="footer-links">-->
+    <!--        <div class="footer-col">-->
+    <!--            <h4>Platform</h4>-->
+    <!--            <a href="/">Home</a>-->
+    <!--            <a href="#create-section" onclick="scrollToCreate(event)">Create Folder</a>-->
+    <!--        </div>-->
+    <!--        <div class="footer-col">-->
+    <!--            <h4>Supported Files</h4>-->
+    <!--            <span>PDF, DOCX, PPTX, XLSX</span>-->
+    <!--            <span>MP3, ZIP, JPG, PNG, WEBP</span>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <!--</div>-->
     <div class="footer-bottom">
         <p>&copy; <?php echo date('Y'); ?> <?php echo APP_NAME; ?>. Built for seamless sharing. Developed by <a href="https://wa.me/8801792250709" target="_blank" style="color: var(--green-400); font-weight: 600;">Ashikul Islam</a></p>
     </div>
@@ -75,6 +75,7 @@
     const MAX_FILE_SIZE = <?php echo isset($customMaxFileSize) ? $customMaxFileSize : MAX_FILE_SIZE; ?>;
     const MAX_FILES_PER_UPLOAD = <?php echo MAX_FILES_PER_UPLOAD; ?>;
     const ALLOWED_EXTENSIONS = <?php echo json_encode(array_keys(ALLOWED_EXTENSIONS)); ?>;
+    const UPLOAD_CHUNK_SIZE = <?php echo getUploadChunkSize(); ?>;
 
     // Custom Confirm Function
     window.customConfirm = function (title, message, onConfirm, cancelText = 'Cancel', okText = 'Delete', okColor = '#dc2626') {
@@ -114,7 +115,7 @@
         btnOk.addEventListener('click', handleOk);
     };
 </script>
-<script src="/assets/js/app.js?v=3.1.3"></script>
+<script src="/assets/js/app.js?v=3.1.6"></script>
 </body>
 
 </html>

@@ -21,8 +21,22 @@ try {
     } catch (PDOException $e) { /* Ignore if exists */ }
 
     try {
+        $db->exec("ALTER TABLE users ADD COLUMN folder_limit INT NOT NULL DEFAULT 3");
+        echo "Added folder_limit column.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
         $db->exec("ALTER TABLE users ADD COLUMN is_public TINYINT(1) NOT NULL DEFAULT 0");
-        echo "Added is_public column.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
+        $db->exec("ALTER TABLE folders ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL");
+        echo "Added ip_address column to folders table.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
+        $db->exec("ALTER TABLE folders ADD COLUMN device_id VARCHAR(64) DEFAULT NULL");
+        echo "Added device_id column to folders table.\n";
     } catch (PDOException $e) { /* Ignore if exists */ }
 
     try {
