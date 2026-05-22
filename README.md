@@ -153,31 +153,53 @@ FileFlow/
 
 ---
 
-## ✨ Core Features
+## ✨ Core Features & Technical Deep-Dive
 
-### 📂 Flow Folders (Dynamic Sharing)
-* **Custom Names:** Claim custom slugs (e.g. `/my-shared-files`) for unique, professional presentation.
-* **Security Settings:** Toggle password protection on folders. Passwords are encrypted on the database using salted BCrypt.
-* **Auto-Expiration:** Set folders to expire after 1 hour, 24 hours, 7 days, 30 days, or never. Expired folders and their physical files are automatically deleted via the cleanup scheduler.
-* **Visits Analytics:** Visually track how many views a folder has received.
-* **QR Codes:** Instantly auto-generate QR codes for folders so mobile users can scan and access files quickly.
+### 📂 Flow Folders & File Sharing System
+FileFlow implements an isolated, customizable directory sharing system known as **Flow Folders**. 
+* **Dynamic Slug Routing:** Clean URLs are mapped directly to user-created folders (e.g., `fileflow.ashikone.com/my-folder`). The Apache engine translates all catch-all URL parameters through `index.php`, querying the folders table for matching slugs.
+* **Salted Password Protection:** Folders can be locked using custom passwords. Passwords are saved using salted `bcrypt` hashes (`PASSWORD_BCRYPT`). Upon accessing a locked folder slug, a temporary session-based clearance token is assigned to prevent repeated password queries.
+* **Automatic Expiration Cleanup:** Folders are associated with a Time-To-Live (TTL) attribute (`expired_at` timestamp). An asynchronous background cleanup scheduler validates expired directories, deletes physical files from the server, and purges metadata records from the database.
+* **Resilient Chunked Upload Pipeline:** 
+  - To bypass small PHP configuration limits (e.g., `upload_max_filesize`), files are sliced into **2MB chunks** on the client side using the HTML5 File API.
+  - Chunks are uploaded sequentially via AJAX. If a chunk fails, the queue manager retries the specific chunk instead of re-uploading the entire file.
+  - The server dynamically appends incoming chunks to a temporary file (`.part` suffix) and renames the complete file once the final chunk checksum matches.
+  - Managed by a floating, persistent control panel displaying upload speed, progress bar, active queue, and time-remaining (ETA) calculations. Users can browse the SPA without breaking the uploads.
 
-### 📤 Resilient Chunked Uploads
-* **Queue Management:** Supports multi-file selection (up to 10 files per batch) and handles uploads in an asynchronous queue (up to 5 concurrent streams).
-* **Chunking Protocol:** Splits large files into small 2MB packets. This prevents server timeout errors, bypasses small PHP upload configuration limits, and allows for clean auto-resuming on network hitches.
-* **Persistent Upload Widget:** A floating control panel displaying speed (KB/s), progress percentage, active file queues, and time-remaining (ETA) calculations. Users can minimize it and browse the website while uploads continue uninterrupted.
+### ⚡ Redis Caching & Socket RESP Fallback
+To ensure low database overhead and lightning-fast page response times, the application implements a dedicated caching layer.
 
-### 💬 Social & Networking Engine
-* **Connections:** Search for users and send, accept, or reject networking connection requests.
-* **Direct Messaging:** Live chat interface complete with unread badge alerts, historical logs, message deletion, and live typing indicators.
-* **Public/Private Feed:** Share posts with text content, link references, or attached file media. Options to set visibility to Public, Connections-only, or Private.
-* **Interactions:** Support for liking posts, nested comment replies (hierarchical threads), and sharing tracking.
+* **Cache Keys Layout:**
+  - `folder:slug:[slug_name]` -> Caches general folder properties and configuration flags.
+  - `folder:files:[folder_id]` -> Caches directory file tree contents.
+  - `profile:slug:[user_slug]` -> Stores professional digital profile card contents.
+  - `stats:global` -> Caches site metrics for the administrator dashboard.
+* **RESP TCP Socket Fallback (`SocketRedis`):** 
+  - When the native PHP Redis extension is unavailable, `includes/redis.php` opens a raw TCP connection (`fsockopen`) to the Redis daemon.
+  - It implements a lightweight parser to handle the **Redis Serialization Protocol (RESP)**. 
+  - It parses responses using RESP prefixes:
+    - `+` (Simple Strings)
+    - `-` (Errors)
+    - `:` (Integers)
+    - `$` (Bulk Strings)
+    - `*` (Arrays)
+  This ensures caching remains active across cheap or restricted hosting nodes.
 
-### 👤 Interactive Digital Profile Cards
-* Accessible via `/u/[username]`, these responsive card systems showcase professional branding.
-* Supports customized header background covers, user profile avatars, career bio, and work experience notes.
-* Integrated digital CV download options with custom button colors.
-* Direct connection actions (Connect, Message) and profile view counter.
+### 🔒 Thoughts Microblog & Post Privacy Matrix
+The platform features a social microblogging wall ("Thoughts") where users post updates, attachments, or links with specific privacy guards:
+
+* **Post Privacy Levels:**
+  - **`public`**: Visible to everyone, indexed on global feeds, and queryable by anyone.
+  - **`connections`**: Restricts post rendering strictly to users who have an accepted connection status inside the `connections` table.
+  - **`private`**: Only readable by the author. Hidden from search queries and global/user profile feeds.
+* **Hierarchical Nesting Comments:** Comments are modeled with a self-referencing relationship (`parent_id`). The thoughts engine renders infinite nesting lists with mobile-friendly indentation offsets and clean, async CRUD controls.
+* **Share Event Trackers:** Shares are verified on click and incremented in the DB, fetching share-specific links to prevent data duplication.
+
+### 👤 Custom Digital Profile Cards
+Accessible via `/u/[username]`, these responsive card systems showcase professional branding.
+* **Theme Styling & Colors:** Custom branding tokens including profile banner backgrounds, avatar border colors, and resume download button colors are customizable by users and saved directly within their user profile metadata.
+* **Integrated QRCode Engine:** Uses client-side `qrcode.js` to dynamically encode the digital profile link into a high-density QR code, facilitating physical scans for virtual networking.
+* **Dynamic Connection Triggers:** Direct integration with the friendship and chat systems. Visitors can request connections, accept incoming invites, or initiate direct message chats directly from the profile card interface.
 
 ### 👑 Admin Command Center
 * Comprehensive overview of system-wide metrics (total folders, user files, storage size, and active networks).
