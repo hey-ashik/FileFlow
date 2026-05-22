@@ -16,17 +16,35 @@ if (!validateCSRFToken($csrfToken)) {
     jsonResponse(['success' => false, 'errors' => ['Invalid token.']], 403);
 }
 
-$userId = intval($_POST['user_id'] ?? 0);
-if ($userId <= 0) {
-    jsonResponse(['success' => false, 'errors' => ['Invalid input.']], 400);
+$folderIds = $_POST['folder_ids'] ?? [];
+$allUnassigned = intval($_POST['all_unassigned'] ?? 0) === 1;
+
+if (empty($folderIds) && !$allUnassigned) {
+    jsonResponse(['success' => false, 'errors' => ['No folders selected.']], 400);
 }
 
 try {
     $db = getDB();
-    $stmt = $db->prepare("SELECT id, slug FROM folders WHERE user_id = ?");
-    $stmt->execute([$userId]);
-    $folders = $stmt->fetchAll();
     
+    if ($allUnassigned) {
+        // Find all unassigned folders (where user_id is NULL)
+        $stmt = $db->query("SELECT id, slug FROM folders WHERE user_id IS NULL");
+        $folders = $stmt->fetchAll();
+    } else {
+        // Sanitize folders array
+        if (!is_array($folderIds)) {
+            $folderIds = explode(',', $folderIds);
+        }
+        $folderIds = array_filter(array_map('intval', $folderIds));
+        if (empty($folderIds)) {
+            jsonResponse(['success' => false, 'errors' => ['Invalid folders selected.']], 400);
+        }
+        $inQuery = implode(',', array_fill(0, count($folderIds), '?'));
+        $stmt = $db->prepare("SELECT id, slug, user_id FROM folders WHERE id IN ($inQuery)");
+        $stmt->execute($folderIds);
+        $folders = $stmt->fetchAll();
+    }
+
     foreach ($folders as $folder) {
         $dirPath = UPLOAD_DIR . $folder['slug'];
         if (is_dir($dirPath)) {
@@ -37,9 +55,8 @@ try {
             @rmdir($dirPath);
         }
         $db->prepare("DELETE FROM folders WHERE id = ?")->execute([$folder['id']]);
-        clearFolderCache($folder['slug'], $folder['id']);
+        clearFolderCache($folder['slug'], $folder['id'], $folder['user_id'] ?? null);
     }
-    clearUserCache($userId);
     
     jsonResponse(['success' => true]);
 } catch (PDOException $e) {

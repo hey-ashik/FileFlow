@@ -115,7 +115,7 @@
         btnOk.addEventListener('click', handleOk);
     };
 </script>
-<script src="/assets/js/app.js?v=3.1.6"></script>
+<script src="/assets/js/app.js?v=3.1.8"></script>
 </body>
 
 </html>

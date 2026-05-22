@@ -418,12 +418,35 @@ footer, .footer {
     }
 }
 
+.bulk-actions-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--admin-border);
+    margin: 0 1.5rem 1rem 1.5rem;
+}
+
 @media (max-width: 640px) {
     .admin-main-content {
         padding: 1rem;
     }
     .admin-stats-grid {
         grid-template-columns: 1fr;
+    }
+    .bulk-actions-toolbar {
+        margin: 0 1rem 1rem 1rem;
+        padding: 0.5rem 0.75rem;
+        gap: 8px;
+    }
+    .bulk-actions-toolbar span {
+        font-size: 0.8rem !important;
+    }
+    .bulk-actions-toolbar button {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.6rem !important;
     }
 }
 </style>
@@ -752,10 +775,27 @@ footer, .footer {
                         <input type="text" id="user-search" class="admin-search-input" placeholder="Search users by name or email...">
                     </div>
                 </div>
+
+                <!-- Bulk Action Toolbar -->
+                <div id="bulk-users-toolbar" class="bulk-actions-toolbar">
+                    <span style="font-weight: 600; color: var(--admin-text-main);" id="selected-users-count-text">0 user(s) selected</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-sm btn-outline-danger" id="btn-delete-selected-users" disabled style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                        <button class="btn btn-sm btn-danger" id="btn-delete-all-users" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete All
+                        </button>
+                    </div>
+                </div>
+
                 <div class="admin-table-container">
                     <table class="admin-table">
                         <thead>
                             <tr>
+                                <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-users" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;"></th>
                                 <th>User Info</th>
                                 <th>Storage & Limit</th>
                                 <th>Activity</th>
@@ -765,6 +805,11 @@ footer, .footer {
                         <tbody id="user-table-body">
                             <?php foreach($users as $u): ?>
                             <tr class="user-row" data-search="<?= strtolower(htmlspecialchars($u['full_name'] . ' ' . $u['email'])) ?>">
+                                <td style="text-align: center;">
+                                    <?php if($u['id'] !== $currentUser['id']): ?>
+                                        <input type="checkbox" class="user-select-chk" value="<?= $u['id'] ?>" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;">
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 1rem;">
                                         <div style="width: 40px; height: 40px; border-radius: 50%; background: <?= $u['avatar_color'] ?>; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem;">
@@ -800,11 +845,14 @@ footer, .footer {
                                         <button class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="openEditUserModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['full_name'])) ?>', <?= $u['folder_limit'] ?? 3 ?>, <?= $u['space_limit_mb'] ?>, <?= $u['file_upload_limit_mb'] ?? 50 ?>)">Edit Limits</button>
                                         <button class="btn btn-sm btn-outline-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="toggleUserFolders(<?= $u['id'] ?>)">Folders</button>
                                         <button class="btn btn-sm btn-outline-danger" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteAllUserFolders(<?= $u['id'] ?>)">Clear All</button>
+                                        <?php if($u['id'] !== $currentUser['id']): ?>
+                                            <button class="btn btn-sm btn-danger" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteUser(<?= $u['id'] ?>)">Delete User</button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
                             <tr id="user-folders-<?= $u['id'] ?>" style="display: none; background: #f8fafc;">
-                                <td colspan="4" style="padding: 1.5rem; border-bottom: 1px solid var(--admin-border);">
+                                <td colspan="5" style="padding: 1.5rem; border-bottom: 1px solid var(--admin-border);">
                                     <h4 style="font-weight: 600; margin-bottom: 1rem; color: var(--admin-text-main); font-size: 1rem;">Folders for <?= htmlspecialchars($u['full_name']) ?></h4>
                                     <?php
                                     $uFolders = $db->prepare("SELECT * FROM folders WHERE user_id = ? ORDER BY created_at DESC");
@@ -879,10 +927,26 @@ footer, .footer {
                         <p style="color: var(--admin-text-muted); font-size: 0.875rem;">Users have not created any public profile cards yet.</p>
                     </div>
                 <?php else: ?>
+                    <!-- Bulk Action Toolbar -->
+                    <div id="bulk-profiles-toolbar" class="bulk-actions-toolbar">
+                        <span style="font-weight: 600; color: var(--admin-text-main);" id="selected-profiles-count-text">0 card(s) selected</span>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-sm btn-outline-danger" id="btn-delete-selected-profiles" disabled style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Delete
+                            </button>
+                            <button class="btn btn-sm btn-danger" id="btn-delete-all-profiles" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Delete All
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="admin-table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-profiles" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;"></th>
                                     <th>User</th>
                                     <th>Profile Link</th>
                                     <th>Actions</th>
@@ -891,6 +955,9 @@ footer, .footer {
                             <tbody id="profile-table-body">
                                 <?php foreach($profileUsers as $pu): ?>
                                 <tr class="profile-row" data-search="<?= strtolower(htmlspecialchars($pu['full_name'] . ' ' . $pu['profile_slug'])) ?>">
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="profile-select-chk" value="<?= $pu['id'] ?>" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;">
+                                    </td>
                                     <td>
                                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                                             <?php if(!empty($pu['avatar_path'])): ?>
@@ -959,10 +1026,26 @@ footer, .footer {
                         <p style="color: var(--admin-text-muted); font-size: 0.875rem;">All folders currently belong to registered users.</p>
                     </div>
                 <?php else: ?>
+                    <!-- Bulk Action Toolbar -->
+                    <div id="bulk-actions-toolbar" class="bulk-actions-toolbar">
+                        <span style="font-weight: 600; color: var(--admin-text-main);" id="selected-count-text">0 folder(s) selected</span>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-sm btn-outline-danger" id="btn-delete-selected" disabled style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Delete
+                            </button>
+                            <button class="btn btn-sm btn-danger" id="btn-delete-all-unassigned" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Delete All
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="admin-table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-folders" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;"></th>
                                     <th>Folder Info</th>
                                     <th>Link</th>
                                     <th>Storage & Files</th>
@@ -972,6 +1055,7 @@ footer, .footer {
                             <tbody id="folder-table-body">
                                 <?php foreach($unassignedFolders as $f): ?>
                                 <tr class="folder-row" data-search="<?= strtolower(htmlspecialchars($f['display_name'] . ' ' . $f['slug'])) ?>">
+                                    <td style="text-align: center;"><input type="checkbox" class="folder-select-chk" value="<?= $f['id'] ?>" style="cursor:pointer; width: 16px; height: 16px; margin: 0 auto; display: block;"></td>
                                     <td>
                                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                                             <div style="width: 36px; height: 36px; border-radius: 8px; background: #f1f5f9; color: var(--admin-text-muted); display: flex; align-items: center; justify-content: center;">
@@ -1267,6 +1351,335 @@ if (profileSearch) {
         });
     });
 }
+})();
+
+// Bulk selection and action logic for Unassigned Folders
+(function() {
+    const selectAllChk = document.getElementById('select-all-folders');
+    const folderChks = document.querySelectorAll('.folder-select-chk');
+    const btnDeleteSelected = document.getElementById('btn-delete-selected');
+    const btnDeleteAllUnassigned = document.getElementById('btn-delete-all-unassigned');
+    const selectedCountText = document.getElementById('selected-count-text');
+
+    function updateBulkUI() {
+        const checkedChks = document.querySelectorAll('.folder-select-chk:checked');
+        const count = checkedChks.length;
+        
+        if (selectedCountText) {
+            selectedCountText.textContent = `${count} folder(s) selected`;
+        }
+        
+        if (btnDeleteSelected) {
+            btnDeleteSelected.disabled = count === 0;
+        }
+        
+        if (selectAllChk) {
+            selectAllChk.checked = count === folderChks.length && folderChks.length > 0;
+            selectAllChk.indeterminate = count > 0 && count < folderChks.length;
+        }
+    }
+
+    if (selectAllChk) {
+        selectAllChk.addEventListener('change', function() {
+            folderChks.forEach(chk => {
+                if (chk.closest('tr').style.display !== 'none') {
+                    chk.checked = selectAllChk.checked;
+                }
+            });
+            updateBulkUI();
+        });
+    }
+
+    folderChks.forEach(chk => {
+        chk.addEventListener('change', updateBulkUI);
+    });
+
+    if (btnDeleteSelected) {
+        btnDeleteSelected.addEventListener('click', async function() {
+            const checkedChks = document.querySelectorAll('.folder-select-chk:checked');
+            const folderIds = Array.from(checkedChks).map(chk => chk.value);
+            
+            if (folderIds.length === 0) return;
+            
+            customConfirm(
+                'Delete Selected Folders',
+                `Are you sure you want to delete the ${folderIds.length} selected folder(s) and ALL their files? This cannot be undone.`,
+                async () => {
+                    const formData = new FormData();
+                    folderIds.forEach(id => formData.append('folder_ids[]', id));
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-folders', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(`${folderIds.length} folders deleted.`);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
+
+    if (btnDeleteAllUnassigned) {
+        btnDeleteAllUnassigned.addEventListener('click', function() {
+            customConfirm(
+                'Delete All Unassigned Folders',
+                'Are you sure you want to delete ALL unassigned and anonymous folders in the system? This will delete all their uploaded files and cannot be undone.',
+                async () => {
+                    const formData = new FormData();
+                    formData.append('all_unassigned', '1');
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-folders', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast('All unassigned folders deleted.');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
+})();
+
+// Bulk selection and action logic for Users
+(function() {
+    const selectAllChk = document.getElementById('select-all-users');
+    const userChks = document.querySelectorAll('.user-select-chk');
+    const btnDeleteSelected = document.getElementById('btn-delete-selected-users');
+    const btnDeleteAllUsers = document.getElementById('btn-delete-all-users');
+    const selectedCountText = document.getElementById('selected-users-count-text');
+
+    function updateBulkUI() {
+        const checkedChks = document.querySelectorAll('.user-select-chk:checked');
+        const count = checkedChks.length;
+        
+        if (selectedCountText) {
+            selectedCountText.textContent = `${count} user(s) selected`;
+        }
+        
+        if (btnDeleteSelected) {
+            btnDeleteSelected.disabled = count === 0;
+        }
+        
+        if (selectAllChk) {
+            selectAllChk.checked = count === userChks.length && userChks.length > 0;
+            selectAllChk.indeterminate = count > 0 && count < userChks.length;
+        }
+    }
+
+    if (selectAllChk) {
+        selectAllChk.addEventListener('change', function() {
+            userChks.forEach(chk => {
+                if (chk.closest('tr').style.display !== 'none') {
+                    chk.checked = selectAllChk.checked;
+                }
+            });
+            updateBulkUI();
+        });
+    }
+
+    userChks.forEach(chk => {
+        chk.addEventListener('change', updateBulkUI);
+    });
+
+    if (btnDeleteSelected) {
+        btnDeleteSelected.addEventListener('click', async function() {
+            const checkedChks = document.querySelectorAll('.user-select-chk:checked');
+            const userIds = Array.from(checkedChks).map(chk => chk.value);
+            
+            if (userIds.length === 0) return;
+            
+            customConfirm(
+                'Delete Selected Users',
+                `Are you sure you want to delete the ${userIds.length} selected user(s) and ALL their files, folders, and profile cards? They will need to register new accounts. This cannot be undone.`,
+                async () => {
+                    const formData = new FormData();
+                    userIds.forEach(id => formData.append('user_ids[]', id));
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-users', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(`${userIds.length} users deleted.`);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
+
+    if (btnDeleteAllUsers) {
+        btnDeleteAllUsers.addEventListener('click', function() {
+            customConfirm(
+                'Delete All Users',
+                'Are you sure you want to delete ALL users (excluding yourself) and ALL of their files, folders, and profile cards? This cannot be undone.',
+                async () => {
+                    const formData = new FormData();
+                    formData.append('all_users', '1');
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-users', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast('All users deleted.');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
+})();
+
+// Individual Delete User function
+function deleteUser(userId) {
+    customConfirm(
+        'Delete User Account',
+        'Are you sure you want to delete this user account, and ALL of their files, folders, and profile cards? They will need to register a new account to use the site again. This cannot be undone.',
+        async () => {
+            const formData = new FormData();
+            formData.append('user_ids[]', userId);
+            formData.append('csrf_token', getCSRF());
+            
+            try {
+                const res = await fetch('/api/admin/bulk-delete-users', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('User account successfully removed.');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(data.errors?.[0] || 'Delete failed', 'error');
+                }
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        }
+    );
+}
+
+// Bulk selection and action logic for Profile Cards
+(function() {
+    const selectAllChk = document.getElementById('select-all-profiles');
+    const profileChks = document.querySelectorAll('.profile-select-chk');
+    const btnDeleteSelected = document.getElementById('btn-delete-selected-profiles');
+    const btnDeleteAllProfiles = document.getElementById('btn-delete-all-profiles');
+    const selectedCountText = document.getElementById('selected-profiles-count-text');
+
+    function updateBulkUI() {
+        const checkedChks = document.querySelectorAll('.profile-select-chk:checked');
+        const count = checkedChks.length;
+        
+        if (selectedCountText) {
+            selectedCountText.textContent = `${count} card(s) selected`;
+        }
+        
+        if (btnDeleteSelected) {
+            btnDeleteSelected.disabled = count === 0;
+        }
+        
+        if (selectAllChk) {
+            selectAllChk.checked = count === profileChks.length && profileChks.length > 0;
+            selectAllChk.indeterminate = count > 0 && count < profileChks.length;
+        }
+    }
+
+    if (selectAllChk) {
+        selectAllChk.addEventListener('change', function() {
+            profileChks.forEach(chk => {
+                if (chk.closest('tr').style.display !== 'none') {
+                    chk.checked = selectAllChk.checked;
+                }
+            });
+            updateBulkUI();
+        });
+    }
+
+    profileChks.forEach(chk => {
+        chk.addEventListener('change', updateBulkUI);
+    });
+
+    if (btnDeleteSelected) {
+        btnDeleteSelected.addEventListener('click', async function() {
+            const checkedChks = document.querySelectorAll('.profile-select-chk:checked');
+            const userIds = Array.from(checkedChks).map(chk => chk.value);
+            
+            if (userIds.length === 0) return;
+            
+            customConfirm(
+                'Delete Selected Profile Cards',
+                `Are you sure you want to remove the ${userIds.length} selected user profile card(s)? This will remove their public links but keep their user accounts.`,
+                async () => {
+                    const formData = new FormData();
+                    userIds.forEach(id => formData.append('user_ids[]', id));
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-profile-cards', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(`${userIds.length} profile cards removed.`);
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
+
+    if (btnDeleteAllProfiles) {
+        btnDeleteAllProfiles.addEventListener('click', function() {
+            customConfirm(
+                'Delete All Profile Cards',
+                'Are you sure you want to delete ALL user profile cards in the system? This will remove all public profile links but keep their user accounts.',
+                async () => {
+                    const formData = new FormData();
+                    formData.append('all_profiles', '1');
+                    formData.append('csrf_token', getCSRF());
+                    
+                    try {
+                        const res = await fetch('/api/admin/bulk-delete-profile-cards', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast('All profile cards removed.');
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            showToast(data.errors?.[0] || 'Delete failed', 'error');
+                        }
+                    } catch(e) {
+                        showToast('Network error', 'error');
+                    }
+                }
+            );
+        });
+    }
 })();
 </script>
 

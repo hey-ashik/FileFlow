@@ -11,8 +11,26 @@ if (!empty($user['profile_slug'])) {
 }
 ?>
 
-<div class="container" style="max-width: 800px; padding: 2rem 1rem;">
-    <h1 style="margin-bottom: 2rem;">Profile Card</h1>
+<div style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+</div>
+
+<div class="container" style="max-width: 800px; padding: 2rem 1rem; position: relative; z-index: 1;">
+    <h1 style="margin-bottom: 0.5rem;">Profile Card</h1>
+    <?php if ($publicProfileUrl): ?>
+        <div style="margin-bottom: 2rem;">
+            <a href="<?php echo htmlspecialchars($publicProfileUrl); ?>" target="_blank" style="display: flex; justify-content: center; align-items: center; width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--green-600); border-radius: 8px; background: white; color: var(--green-600); font-weight: 600; font-size: 1.05rem; text-decoration: none; gap: 0.5rem; box-sizing: border-box; transition: all 0.2s;" onmouseover="this.style.background='var(--green-600)'; this.style.color='white';" onmouseout="this.style.background='white'; this.style.color='var(--green-600)';">
+                View Public Profile Card
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+        </div>
+    <?php else: ?>
+        <div style="margin-bottom: 2rem; color: var(--gray-500); font-size: 0.95rem;">
+            Set up your Custom URL Slug below to get your public profile link.
+        </div>
+    <?php endif; ?>
 
     <!-- Cover Photo Section -->
     <div class="profile-card"

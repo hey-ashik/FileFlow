@@ -37,6 +37,7 @@ try {
     } catch (PDOException $e) {}
 
     $db->prepare("UPDATE users SET space_limit_mb = ?, file_upload_limit_mb = ?, folder_limit = ? WHERE id = ?")->execute([$limit, $uploadLimit, $folderLimit, $userId]);
+    clearUserCache($userId);
     jsonResponse(['success' => true]);
 } catch (PDOException $e) {
     jsonResponse(['success' => false, 'errors' => ['Database error.']], 500);

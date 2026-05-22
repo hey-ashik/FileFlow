@@ -23,7 +23,7 @@ if ($folderId <= 0) {
 
 try {
     $db = getDB();
-    $stmt = $db->prepare("SELECT slug FROM folders WHERE id = ?");
+    $stmt = $db->prepare("SELECT slug, user_id FROM folders WHERE id = ?");
     $stmt->execute([$folderId]);
     $folder = $stmt->fetch();
     
@@ -37,6 +37,7 @@ try {
             @rmdir($dirPath);
         }
         $db->prepare("DELETE FROM folders WHERE id = ?")->execute([$folderId]);
+        clearFolderCache($folder['slug'], $folderId, $folder['user_id']);
     }
     
     jsonResponse(['success' => true]);

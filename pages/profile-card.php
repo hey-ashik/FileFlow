@@ -56,6 +56,8 @@ foreach ($socialLinks as $sl) {
 
 $pageTitle = htmlspecialchars($userProfile['full_name']) . "'s Profile Card";
 $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s digital profile card.";
+
+$isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -74,10 +76,13 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
     <style>
         :root {
             --primary: #16a34a;
+            --green-600: #16a34a;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #0f172a;
+            --gray-900: #0f172a;
             --text-muted: #64748b;
+            --gray-500: #64748b;
         }
 
         * {
@@ -88,7 +93,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg);
+            background: transparent;
             color: var(--text-main);
             display: flex;
             justify-content: center;
@@ -320,12 +325,74 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
             text-decoration: none;
             font-weight: 500;
         }
+
+        /* Thoughts tab overrides: generally reduce margin and padding of the thought post boxes */
+        #user-thoughts-container .thought-card {
+            padding: 1rem !important;
+            margin-bottom: 1rem !important;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Responsiveness for mobile screens */
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+
+            .card-body {
+                padding: 3.5rem 1rem 1.5rem 1rem;
+            }
+
+            .name {
+                font-size: 1.3rem;
+            }
+
+            .contact-info {
+                font-size: 0.9rem;
+            }
+
+            /* Adjust avatar size on small screen to avoid taking up too much vertical space */
+            .avatar-container {
+                width: 100px;
+                height: 100px;
+                bottom: -50px;
+            }
+
+            .card-header {
+                height: 140px;
+            }
+
+            /* Reduce margin and padding of the post box in the thoughts section even more on mobile */
+            #user-thoughts-container .thought-card {
+                padding: 0.75rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            /* Fix nested comments left margin indentation on mobile so it doesn't push them off-screen */
+            #user-thoughts-container [style*="margin-left"] {
+                margin-left: 0.75rem !important;
+                padding-left: 0.5rem !important;
+            }
+
+            /* Prevent email/phone text overflow */
+            .info-row a {
+                word-break: break-all;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #f0fdf4 100%); overflow: hidden; pointer-events: none;">
+        <div style="position: absolute; border-radius: 50%; filter: blur(80px); opacity: .4; width: 400px; height: 400px; background: #86efac; top: -100px; right: -100px; animation: float 10s ease-in-out infinite;"></div>
+        <div style="position: absolute; border-radius: 50%; filter: blur(80px); opacity: .4; width: 300px; height: 300px; background: #10b981; bottom: -80px; left: -80px; animation: float 12s ease-in-out infinite reverse;"></div>
+        <div style="position: absolute; border-radius: 50%; filter: blur(80px); opacity: .4; width: 200px; height: 200px; background: #bbf7d0; top: 40%; left: 60%; animation: float 8s ease-in-out infinite 2s;"></div>
+    </div>
+    <style>@keyframes float { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-20px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }</style>
 
-    <div class="profile-container">
+    <div class="profile-container" style="position: relative; z-index: 1;">
         <div class="card">
             <div class="card-header">
                 <div class="avatar-container">
@@ -382,9 +449,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                     $connStatus = null;
                     $connId = null;
                     $isRequester = false;
-                    $isLoggedInUser = false;
-                    if (function_exists('isLoggedIn') && isLoggedIn()) {
-                        $isLoggedInUser = true;
+                    if ($isLoggedInUser) {
                         $currUser = getCurrentUser();
                         if ($currUser['id'] !== $userProfile['id']) {
                             try {
@@ -428,10 +493,8 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                                         Requested
                                     </button>
                                 <?php else: ?>
-                                    <div style="flex: 1; display: flex; gap: 0.5rem;">
-                                        <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'accepted', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">Accept</button>
-                                        <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'rejected', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s;">Decline</button>
-                                    </div>
+                                    <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'accepted', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">Accept</button>
+                                    <button onclick="respondConnectionProfile(<?php echo $connId; ?>, 'rejected', this)" style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.2s;">Decline</button>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <button onclick="handleConnect(<?php echo $userProfile['id']; ?>)" class="btn-connect" style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; border: none; background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
@@ -449,6 +512,14 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                     </div>
                 <?php endif; ?>
 
+                <?php if (!empty($userProfile['is_public'])): ?>
+                    <div class="profile-tabs" style="display: flex; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.5rem; gap: 0.5rem;">
+                        <button class="tab-btn active" onclick="switchTab('professional')" id="tab-professional" style="flex: 1; background: none; border: none; padding: 0.75rem; font-weight: 600; font-size: 0.95rem; color: var(--primary); border-bottom: 2px solid var(--primary); cursor: pointer; transition: all 0.2s;">Professional</button>
+                        <button class="tab-btn" onclick="switchTab('thoughts')" id="tab-thoughts" style="flex: 1; background: none; border: none; padding: 0.75rem; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;">Thoughts</button>
+                    </div>
+                <?php endif; ?>
+
+                <div id="tab-content-professional">
                 <?php if ($hasSocial): ?>
                     <div class="section">
                         <div class="section-title">Social Connections</div>
@@ -526,6 +597,16 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
                         Copy Profile Link
                     </button>
                 </div>
+                </div> <!-- End of tab-content-professional -->
+                
+                <?php if (!empty($userProfile['is_public'])): ?>
+                <div id="tab-content-thoughts" style="display: none;">
+                    <div id="user-thoughts-container" style="text-align: left;">
+                        <!-- Thoughts will be loaded here via JS -->
+                        <div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">Loading thoughts...</div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -537,6 +618,535 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
     </div>
 
     <script>
+        window.switchTab = function(tab) {
+            const btnProf = document.getElementById('tab-professional');
+            const btnThoughts = document.getElementById('tab-thoughts');
+            const contentProf = document.getElementById('tab-content-professional');
+            const contentThoughts = document.getElementById('tab-content-thoughts');
+            
+            if (!btnProf || !btnThoughts) return;
+
+            if (tab === 'professional') {
+                btnProf.style.color = 'var(--primary)';
+                btnProf.style.borderBottomColor = 'var(--primary)';
+                btnThoughts.style.color = 'var(--text-muted)';
+                btnThoughts.style.borderBottomColor = 'transparent';
+                contentProf.style.display = 'block';
+                contentThoughts.style.display = 'none';
+            } else {
+                btnThoughts.style.color = 'var(--primary)';
+                btnThoughts.style.borderBottomColor = 'var(--primary)';
+                btnProf.style.color = 'var(--text-muted)';
+                btnProf.style.borderBottomColor = 'transparent';
+                contentProf.style.display = 'none';
+                contentThoughts.style.display = 'block';
+                loadUserThoughts();
+            }
+        }
+
+        let thoughtsLoaded = false;
+        window.loadUserThoughts = async function() {
+            if (thoughtsLoaded) return;
+            const container = document.getElementById('user-thoughts-container');
+            try {
+                const res = await fetch(`/api/thoughts?action=get_user_thoughts&user_id=<?php echo $userProfile['id']; ?>`);
+                const html = await res.text();
+                container.innerHTML = html;
+                thoughtsLoaded = true;
+                
+                // Stagger animation delays
+                const cards = container.querySelectorAll('.thought-card');
+                cards.forEach((card, idx) => {
+                    card.style.animationDelay = `${idx * 0.05}s`;
+                    card.style.opacity = '0'; // start hidden before animation begins
+                });
+            } catch (err) {
+                container.innerHTML = '<div style="color: red; text-align: center;">Failed to load thoughts.</div>';
+            }
+        }
+
+        window.toggleThoughtLike = async function(thoughtId, btnElem) {
+            <?php if (!$isLoggedInUser): ?>
+                alert('Please log in to like posts.');
+                return;
+            <?php endif; ?>
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'toggle_like');
+                formData.append('thought_id', thoughtId);
+                
+                const res = await fetch('/api/thoughts', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    const countSpan = btnElem.querySelector('.like-count');
+                    countSpan.textContent = data.count;
+                    const svg = btnElem.querySelector('svg');
+                    if (data.liked) {
+                        svg.setAttribute('fill', 'var(--primary)');
+                        svg.setAttribute('stroke', 'var(--primary)');
+                    } else {
+                        svg.setAttribute('fill', 'none');
+                        svg.setAttribute('stroke', 'currentColor');
+                    }
+                } else {
+                    alert(data.message || 'Error');
+                }
+            } catch (err) {}
+        }
+
+        window.toggleComments = function(thoughtId) {
+            const section = document.getElementById(`comments-section-${thoughtId}`);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                loadComments(thoughtId);
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        window.loadComments = async function(thoughtId) {
+            const container = document.getElementById(`comments-list-${thoughtId}`);
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">Loading...</div>';
+            try {
+                const res = await fetch(`/api/thoughts?action=get_comments&thought_id=${thoughtId}`);
+                const html = await res.text();
+                container.innerHTML = html;
+            } catch (err) {
+                container.innerHTML = '<div style="color: red; font-size: 0.9rem;">Failed to load comments.</div>';
+            }
+        }
+
+        window.postComment = async function(thoughtId) {
+            const input = document.getElementById(`comment-input-${thoughtId}`);
+            const comment = input.value.trim();
+            if (!comment) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'post_comment');
+                formData.append('thought_id', thoughtId);
+                formData.append('comment', comment);
+                
+                const res = await fetch('/api/thoughts', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    loadComments(thoughtId);
+                    const card = document.getElementById(`comments-section-${thoughtId}`).closest('.thought-card');
+                    const countSpan = card.querySelector('.comment-count');
+                    countSpan.textContent = data.count;
+                } else {
+                    alert(data.message || 'Error');
+                }
+            } catch (err) {
+                alert('Failed to post comment.');
+            }
+        }
+
+        window.shareThought = async function(thoughtId) {
+            try {
+                const formData = new FormData();
+                formData.append('action', 'share_thought');
+                formData.append('thought_id', thoughtId);
+                
+                const res = await fetch('/api/thoughts', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    const card = document.getElementById(`comments-section-${thoughtId}`).closest('.thought-card');
+                    const countSpan = card.querySelector('.share-count');
+                    countSpan.textContent = data.count;
+                    
+                    navigator.clipboard.writeText(data.link).then(() => {
+                        alert('Link copied to clipboard!');
+                    }).catch(err => {
+                        alert('Shared! Link: ' + data.link);
+                    });
+                } else {
+                    if (data.message === 'Please log in to share.') {
+                        alert(data.message);
+                    } else {
+                        navigator.clipboard.writeText(window.location.origin + '/thoughts?id=' + thoughtId);
+                        alert('Link copied to clipboard!');
+                    }
+                }
+            } catch (err) {}
+        }
+        
+        window.deleteThought = async function(thoughtId) {
+            if (!confirm('Are you sure you want to delete this post?')) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'delete_thought');
+                formData.append('thought_id', thoughtId);
+                
+                const res = await fetch('/api/thoughts', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    const card = document.querySelector(`.thought-card[data-id="${thoughtId}"]`);
+                    if (card) {
+                        card.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.95)';
+                        card.style.maxHeight = card.offsetHeight + 'px';
+                        card.offsetHeight; // force reflow
+                        
+                        card.style.maxHeight = '0';
+                        card.style.paddingTop = '0';
+                        card.style.paddingBottom = '0';
+                        card.style.marginTop = '0';
+                        card.style.marginBottom = '0';
+                        card.style.border = 'none';
+                        card.style.overflow = 'hidden';
+                        
+                        setTimeout(() => {
+                            card.remove();
+                        }, 500);
+                    } else {
+                        thoughtsLoaded = false;
+                        window.loadUserThoughts();
+                    }
+                } else {
+                    alert(data.message || 'Error deleting post.');
+                }
+            } catch (err) {
+                alert('Failed to delete post.');
+            }
+        }
+        
+        window.editThought = function(thoughtId) {
+            const displayDiv = document.getElementById(`thought-content-display-${thoughtId}`);
+            const rawDiv = document.getElementById(`thought-content-raw-${thoughtId}`);
+            const rawLink = document.getElementById(`thought-link-raw-${thoughtId}`);
+            const rawPrivacy = document.getElementById(`thought-privacy-raw-${thoughtId}`);
+            const hasMedia = document.getElementById(`thought-has-media-${thoughtId}`).textContent === '1';
+            if (document.getElementById(`thought-edit-container-${thoughtId}`)) return;
+            
+            const container = document.createElement('div');
+            container.id = `thought-edit-container-${thoughtId}`;
+            container.style.marginBottom = '1rem';
+            
+            const textarea = document.createElement('textarea');
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '80px';
+            textarea.style.padding = '0.5rem';
+            textarea.style.borderRadius = '8px';
+            textarea.style.border = '1px solid #cbd5e1';
+            textarea.style.marginBottom = '0.5rem';
+            textarea.style.fontFamily = 'inherit';
+            textarea.value = rawDiv.textContent;
+            
+            const linkInput = document.createElement('input');
+            linkInput.type = 'text';
+            linkInput.placeholder = 'Link URL (optional)';
+            linkInput.style.width = '100%';
+            linkInput.style.padding = '0.5rem';
+            linkInput.style.borderRadius = '8px';
+            linkInput.style.border = '1px solid #cbd5e1';
+            linkInput.style.marginBottom = '0.5rem';
+            linkInput.style.fontFamily = 'inherit';
+            linkInput.value = rawLink ? rawLink.textContent : '';
+            
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.multiple = true;
+            fileInput.accept = 'image/*,video/*';
+            fileInput.style.marginBottom = '0.5rem';
+            fileInput.style.display = 'block';
+            fileInput.style.fontSize = '0.85rem';
+            
+            let removeMediaCheckbox = null;
+            if (hasMedia) {
+                const removeLabel = document.createElement('label');
+                removeLabel.style.display = 'block';
+                removeLabel.style.fontSize = '0.85rem';
+                removeLabel.style.marginBottom = '0.5rem';
+                removeLabel.style.color = '#ef4444';
+                removeLabel.style.cursor = 'pointer';
+                
+                removeMediaCheckbox = document.createElement('input');
+                removeMediaCheckbox.type = 'checkbox';
+                removeMediaCheckbox.style.marginRight = '0.5rem';
+                
+                removeLabel.appendChild(removeMediaCheckbox);
+                removeLabel.appendChild(document.createTextNode('Remove existing media (or select files above to replace them)'));
+                container.appendChild(textarea);
+                container.appendChild(linkInput);
+                container.appendChild(fileInput);
+                container.appendChild(removeLabel);
+            } else {
+                container.appendChild(textarea);
+                container.appendChild(linkInput);
+                container.appendChild(fileInput);
+            }
+            
+            const privacySelect = document.createElement('select');
+            privacySelect.style.border = '1px solid #cbd5e1';
+            privacySelect.style.borderRadius = '8px';
+            privacySelect.style.padding = '0.5rem 1rem';
+            privacySelect.style.fontFamily = 'inherit';
+            privacySelect.style.fontSize = '0.85rem';
+            privacySelect.style.marginBottom = '0.5rem';
+            privacySelect.style.width = '100%';
+            privacySelect.innerHTML = '<option value="public">Public</option><option value="friends">Friends</option><option value="private">Private</option>';
+            privacySelect.value = rawPrivacy ? rawPrivacy.textContent : 'public';
+            container.appendChild(privacySelect);
+            
+            const actions = document.createElement('div');
+            actions.style.display = 'flex';
+            actions.style.gap = '0.5rem';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.style.padding = '0.4rem 1rem';
+            saveBtn.style.background = 'var(--green-600)';
+            saveBtn.style.color = 'white';
+            saveBtn.style.border = 'none';
+            saveBtn.style.borderRadius = '6px';
+            saveBtn.style.cursor = 'pointer';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.padding = '0.4rem 1rem';
+            cancelBtn.style.background = '#e2e8f0';
+            cancelBtn.style.color = '#475569';
+            cancelBtn.style.border = 'none';
+            cancelBtn.style.borderRadius = '6px';
+            cancelBtn.style.cursor = 'pointer';
+            
+            saveBtn.onclick = async () => {
+                const newContent = textarea.value.trim();
+                const newLink = linkInput.value.trim();
+                if (!newContent && !newLink && (!hasMedia || (removeMediaCheckbox && removeMediaCheckbox.checked)) && fileInput.files.length === 0) {
+                    alert('Post cannot be completely empty.');
+                    return;
+                }
+                
+                try {
+                    saveBtn.textContent = 'Saving...';
+                    saveBtn.disabled = true;
+                    const formData = new FormData();
+                    formData.append('action', 'edit_thought');
+                    formData.append('thought_id', thoughtId);
+                    formData.append('content', newContent);
+                    formData.append('link', newLink);
+                    formData.append('privacy', privacySelect.value);
+                    if (removeMediaCheckbox && removeMediaCheckbox.checked) {
+                        formData.append('remove_media', '1');
+                    }
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        formData.append('media[]', fileInput.files[i]);
+                    }
+                    
+                    const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        thoughtsLoaded = false;
+                        if (typeof window.loadUserThoughts === 'function') window.loadUserThoughts();
+                    } else {
+                        alert(data.message || 'Error editing post.');
+                        saveBtn.textContent = 'Save';
+                        saveBtn.disabled = false;
+                    }
+                } catch (err) {
+                    alert('Failed to edit post.');
+                    saveBtn.textContent = 'Save';
+                    saveBtn.disabled = false;
+                }
+            };
+            
+            cancelBtn.onclick = () => {
+                container.remove();
+                displayDiv.style.display = 'block';
+            };
+            
+            actions.appendChild(saveBtn);
+            actions.appendChild(cancelBtn);
+            container.appendChild(actions);
+            
+            displayDiv.style.display = 'none';
+            displayDiv.parentNode.insertBefore(container, displayDiv.nextSibling);
+        };
+
+        window.editComment = function(commentId) {
+            const displayDiv = document.getElementById(`comment-content-${commentId}`);
+            if (document.getElementById(`comment-edit-container-${commentId}`)) return;
+            
+            const originalText = displayDiv.textContent;
+            const container = document.createElement('div');
+            container.id = `comment-edit-container-${commentId}`;
+            container.style.marginTop = '0.5rem';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalText;
+            input.style.width = '100%';
+            input.style.padding = '0.5rem';
+            input.style.borderRadius = '6px';
+            input.style.border = '1px solid #cbd5e1';
+            input.style.marginBottom = '0.5rem';
+            
+            const actions = document.createElement('div');
+            actions.style.display = 'flex';
+            actions.style.gap = '0.5rem';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.style.padding = '0.2rem 0.75rem';
+            saveBtn.style.background = 'var(--green-600)';
+            saveBtn.style.color = 'white';
+            saveBtn.style.border = 'none';
+            saveBtn.style.borderRadius = '4px';
+            saveBtn.style.cursor = 'pointer';
+            saveBtn.style.fontSize = '0.8rem';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.padding = '0.2rem 0.75rem';
+            cancelBtn.style.background = '#e2e8f0';
+            cancelBtn.style.color = '#475569';
+            cancelBtn.style.border = 'none';
+            cancelBtn.style.borderRadius = '4px';
+            cancelBtn.style.cursor = 'pointer';
+            cancelBtn.style.fontSize = '0.8rem';
+            
+            saveBtn.onclick = async () => {
+                const newText = input.value.trim();
+                if (!newText) return;
+                
+                try {
+                    saveBtn.textContent = '...';
+                    saveBtn.disabled = true;
+                    const formData = new FormData();
+                    formData.append('action', 'edit_comment');
+                    formData.append('comment_id', commentId);
+                    formData.append('comment', newText);
+                    
+                    const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        displayDiv.textContent = newText;
+                        container.remove();
+                        displayDiv.style.display = 'block';
+                    } else {
+                        alert(data.message || 'Error editing comment.');
+                        saveBtn.textContent = 'Save';
+                        saveBtn.disabled = false;
+                    }
+                } catch (err) {
+                    alert('Failed to edit comment.');
+                    saveBtn.textContent = 'Save';
+                    saveBtn.disabled = false;
+                }
+            };
+            
+            cancelBtn.onclick = () => {
+                container.remove();
+                displayDiv.style.display = 'block';
+            };
+            
+            actions.appendChild(saveBtn);
+            actions.appendChild(cancelBtn);
+            container.appendChild(input);
+            container.appendChild(actions);
+            
+            displayDiv.style.display = 'none';
+            displayDiv.parentNode.insertBefore(container, displayDiv.nextSibling);
+        };
+
+        window.deleteComment = async function(commentId, thoughtId) {
+            if (!confirm('Are you sure you want to delete this comment?')) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'delete_comment');
+                formData.append('comment_id', commentId);
+                formData.append('thought_id', thoughtId);
+                
+                const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    window.loadComments(thoughtId);
+                    const card = document.getElementById(`comments-section-${thoughtId}`).closest('.thought-card');
+                    if (card) {
+                        const countSpan = card.querySelector('.comment-count');
+                        if (countSpan) countSpan.textContent = data.count;
+                    }
+                } else {
+                    alert(data.message || 'Error deleting comment.');
+                }
+            } catch (err) {
+                alert('Failed to delete comment.');
+            }
+        }
+
+        window.showReplyForm = function(commentId) {
+            const container = document.getElementById(`reply-container-${commentId}`);
+            if (container) {
+                container.style.display = 'block';
+                document.getElementById(`reply-input-${commentId}`).focus();
+            }
+        };
+
+        window.hideReplyForm = function(commentId) {
+            const container = document.getElementById(`reply-container-${commentId}`);
+            if (container) {
+                container.style.display = 'none';
+                document.getElementById(`reply-input-${commentId}`).value = '';
+            }
+        };
+
+        window.postReply = async function(commentId, thoughtId) {
+            const input = document.getElementById(`reply-input-${commentId}`);
+            const replyText = input.value.trim();
+            if (!replyText) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'post_comment');
+                formData.append('thought_id', thoughtId);
+                formData.append('comment', replyText);
+                formData.append('parent_id', commentId);
+                
+                const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    input.value = '';
+                    window.loadComments(thoughtId);
+                    const card = document.getElementById(`comments-section-${thoughtId}`).closest('.thought-card');
+                    if (card) {
+                        const countSpan = card.querySelector('.comment-count');
+                        if (countSpan) countSpan.textContent = data.count;
+                    }
+                } else {
+                    alert(data.message || 'Error posting reply.');
+                }
+            } catch (err) {
+                alert('Failed to post reply.');
+            }
+        };
+        
         // Generate QR Code
         const pageUrl = window.location.href;
         new QRCode(document.getElementById("qrcode"), {
@@ -549,7 +1159,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
         });
 
         // Copy link function
-        function copyProfileLink() {
+        window.copyProfileLink = function() {
             navigator.clipboard.writeText(pageUrl).then(() => {
                 const btn = document.querySelector('.btn-share');
                 const originalText = btn.innerHTML;
@@ -562,7 +1172,7 @@ $pageDescription = "View " . htmlspecialchars($userProfile['full_name']) . "'s d
             });
         }
 
-        async function handleConnect(userId) {
+        window.handleConnect = async function(userId) {
             const btn = document.querySelector('.btn-connect');
             const originalText = btn.innerHTML;
             btn.innerHTML = 'Sending...';

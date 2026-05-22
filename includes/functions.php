@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/redis.php';
 
 /**
  * Setup database schema and admin user if they do not exist
@@ -99,6 +100,51 @@ function setupAdminAndSchema(): void {
             $db->query("SELECT device_id FROM folders LIMIT 1");
         } catch (PDOException $e) {
             $db->exec("ALTER TABLE folders ADD COLUMN device_id VARCHAR(64) DEFAULT NULL");
+        }
+
+        try {
+            $db->query("SELECT id FROM thoughts LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("CREATE TABLE IF NOT EXISTS `thoughts` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT UNSIGNED NOT NULL,
+                `content` TEXT DEFAULT NULL,
+                `media_paths` JSON DEFAULT NULL,
+                `link` VARCHAR(500) DEFAULT NULL,
+                `views` INT UNSIGNED NOT NULL DEFAULT 0,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            $db->exec("CREATE TABLE IF NOT EXISTS `thought_likes` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `thought_id` BIGINT UNSIGNED NOT NULL,
+                `user_id` INT UNSIGNED NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+                UNIQUE KEY `unique_like` (`thought_id`, `user_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            $db->exec("CREATE TABLE IF NOT EXISTS `thought_comments` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `thought_id` BIGINT UNSIGNED NOT NULL,
+                `user_id` INT UNSIGNED NOT NULL,
+                `comment` TEXT NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            $db->exec("CREATE TABLE IF NOT EXISTS `thought_shares` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `thought_id` BIGINT UNSIGNED NOT NULL,
+                `user_id` INT UNSIGNED NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         }
 
         // Mark setup as complete to improve performance on next loads
@@ -323,6 +369,10 @@ function createFolder(string $name, ?string $password = null, ?string $expiry = 
                 $stmt = $db->prepare("INSERT INTO folders (folder_name, slug, display_name, user_id, ip_address) VALUES (?, ?, ?, ?, ?)");
                 $stmt->execute([$name, $slug, $displayName, $userId, $ip]);
             }
+        }
+        
+        if ($userId) {
+            clearUserCache($userId);
         }
         
         return [
@@ -657,6 +707,19 @@ function uploadFile(array $file, int $folderId, string $folderSlug, int $maxSize
         // Update folder stats
         $db->prepare("UPDATE folders SET total_files = total_files + 1, total_size = total_size + ? WHERE id = ?")->execute([$file['size'], $folderId]);
         
+        // Clear cached stats/folders/files
+        $stmtUser = $db->prepare("SELECT user_id, slug FROM folders WHERE id = ?");
+        $stmtUser->execute([$folderId]);
+        $folderRow = $stmtUser->fetch();
+        if ($folderRow) {
+            clearFolderCache($folderRow['slug'], $folderId, $folderRow['user_id']);
+            if ($folderRow['user_id']) {
+                // Also clear upload stats chart cache
+                $cache = RedisCache::getInstance();
+                $cache->delete("user:uploadstats:{$folderRow['user_id']}:7");
+            }
+        }
+
         return [
             'success' => true,
             'file' => [
@@ -749,6 +812,18 @@ function deleteFile(int $fileId): array {
         
         // Update folder stats
         $db->prepare("UPDATE folders SET total_files = GREATEST(total_files - 1, 0), total_size = GREATEST(total_size - ?, 0) WHERE id = ?")->execute([$file['file_size'], $file['folder_id']]);
+        
+        // Clear cached stats/folders/files
+        $stmtUser = $db->prepare("SELECT user_id, slug FROM folders WHERE id = ?");
+        $stmtUser->execute([$file['folder_id']]);
+        $folderRow = $stmtUser->fetch();
+        if ($folderRow) {
+            clearFolderCache($folderRow['slug'], $file['folder_id'], $folderRow['user_id']);
+            if ($folderRow['user_id']) {
+                $cache = RedisCache::getInstance();
+                $cache->delete("user:uploadstats:{$folderRow['user_id']}:7");
+            }
+        }
         
         // Delete physical file
         if (file_exists($filePath)) {

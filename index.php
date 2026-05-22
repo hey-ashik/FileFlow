@@ -123,6 +123,9 @@ switch (true) {
         }
         require __DIR__ . '/pages/messages.php';
         break;
+    case $path === '/thoughts':
+        require __DIR__ . '/pages/thoughts.php';
+        break;
     case $path === '/logout':
         logoutUser();
         header('Location: /');
@@ -149,6 +152,9 @@ switch (true) {
         break;
     case preg_match('#^/api/network$#', $path):
         require __DIR__ . '/api/network.php';
+        break;
+    case preg_match('#^/api/thoughts$#', $path):
+        require __DIR__ . '/api/thoughts.php';
         break;
 
     // Existing API routes
@@ -178,6 +184,15 @@ switch (true) {
     case preg_match('#^/api/admin/delete-folder$#', $path):
         require __DIR__ . '/api/admin-delete-folder.php';
         break;
+    case preg_match('#^/api/admin/bulk-delete-folders$#', $path):
+        require __DIR__ . '/api/admin-bulk-delete-folders.php';
+        break;
+    case preg_match('#^/api/admin/bulk-delete-users$#', $path):
+        require __DIR__ . '/api/admin-bulk-delete-users.php';
+        break;
+    case preg_match('#^/api/admin/bulk-delete-profile-cards$#', $path):
+        require __DIR__ . '/api/admin-bulk-delete-profile-cards.php';
+        break;
     case preg_match('#^/api/admin/delete-all-folders$#', $path):
         require __DIR__ . '/api/admin-delete-all.php';
         break;
@@ -200,6 +215,12 @@ switch (true) {
     case preg_match('#^/u/([a-zA-Z0-9_-]+)$#', $path, $matches):
         $profileSlug = strtolower($matches[1]);
         require __DIR__ . '/pages/profile-card.php';
+        break;
+
+    // Single post route
+    case preg_match('#^/p/([0-9]+)$#', $path, $matches):
+        $thoughtId = (int)$matches[1];
+        require __DIR__ . '/pages/single-thought.php';
         break;
 
     // Folder page - catch-all

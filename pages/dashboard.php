@@ -22,7 +22,13 @@ $usagePct = $limitBytes > 0 ? min(100, round(($stats['total_size'] / $limitBytes
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<section class="dashboard" id="dashboard">
+<div style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+</div>
+
+<section class="dashboard" id="dashboard" style="position: relative; z-index: 1; background: transparent;">
     <div class="container">
         <!-- Dashboard Header -->
         <div class="dash-header">

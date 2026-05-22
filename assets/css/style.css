@@ -271,7 +271,7 @@ h4 {
     z-index: 1000;
     background: var(--white);
     border-radius: 50px;
-    border: 1px solid var(--gray-100);
+    border: 1px solid #7e8286;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     transition: var(--transition);
 }
@@ -344,7 +344,7 @@ h4 {
     gap: 8px;
     transition: var(--transition);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    border: 1px solid #7e8286;
 }
 
 .nav-search-pill:focus-within {

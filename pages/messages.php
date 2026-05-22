@@ -31,7 +31,13 @@ $pendingRequests = $stmt->fetchAll();
 $chatTarget = (int) ($_GET['chat'] ?? 0);
 ?>
 
-<div class="container" style="max-width: 1200px; padding: 2rem 1rem;">
+<div style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+</div>
+
+<div class="container" style="max-width: 1200px; padding: 2rem 1rem; position: relative; z-index: 1;">
     <div style="display: flex; flex-direction: row; gap: 0; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; height: 80vh; overflow: hidden;"
         class="messages-layout">
 

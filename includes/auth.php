@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/redis.php';
 
 /**
  * Register a new user
@@ -107,11 +108,21 @@ function isAdmin(): bool {
  */
 function getCurrentUser(): ?array {
     if (!isLoggedIn()) return null;
+    
+    $cache = RedisCache::getInstance();
+    $cacheKey = "user:profile:" . $_SESSION['user_id'];
+    $cachedUser = $cache->get($cacheKey);
+    if ($cachedUser !== null) {
+        return $cachedUser;
+    }
+    
     $db = getDB();
     $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
-    return [
+    if (!$user) return null;
+    
+    $userData = [
         'id' => $_SESSION['user_id'],
         'name' => $_SESSION['user_name'],
         'email' => $_SESSION['user_email'],
@@ -130,6 +141,9 @@ function getCurrentUser(): ?array {
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
         'is_admin' => $_SESSION['is_admin'] ?? false
     ];
+    
+    $cache->set($cacheKey, $userData, 3600);
+    return $userData;
 }
 
 /**
@@ -193,6 +207,7 @@ function resetPassword(string $token, string $newPassword): array {
     $hash = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
     $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?")->execute([$hash, $reset['user_id']]);
     $db->prepare("UPDATE password_resets SET used = 1 WHERE id = ?")->execute([$reset['id']]);
+    clearUserCache($reset['user_id']);
 
     return ['success' => true, 'message' => 'Password reset successfully. You can now login.'];
 }
@@ -201,6 +216,13 @@ function resetPassword(string $token, string $newPassword): array {
  * Get dashboard stats for a user
  */
 function getUserDashboardStats(int $userId): array {
+    $cache = RedisCache::getInstance();
+    $cacheKey = "user:stats:{$userId}";
+    $cachedStats = $cache->get($cacheKey);
+    if ($cachedStats !== null) {
+        return $cachedStats;
+    }
+
     $db = getDB();
 
     $folderCount = $db->prepare("SELECT COUNT(*) FROM folders WHERE user_id = ? AND is_active = 1");
@@ -215,29 +237,49 @@ function getUserDashboardStats(int $userId): array {
     $downloads->execute([$userId]);
     $totalDownloads = $downloads->fetchColumn();
 
-    return [
+    $data = [
         'folders' => (int)$folders,
         'files' => (int)$stats['total_files'],
         'total_size' => (int)$stats['total_size'],
         'total_size_formatted' => formatFileSize((int)$stats['total_size']),
         'downloads' => (int)$totalDownloads
     ];
+
+    $cache->set($cacheKey, $data, 3600);
+    return $data;
 }
 
 /**
  * Get user folders
  */
 function getUserFolders(int $userId): array {
+    $cache = RedisCache::getInstance();
+    $cacheKey = "user:folders:{$userId}";
+    $cachedFolders = $cache->get($cacheKey);
+    if ($cachedFolders !== null) {
+        return $cachedFolders;
+    }
+
     $db = getDB();
     $stmt = $db->prepare("SELECT * FROM folders WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC");
     $stmt->execute([$userId]);
-    return $stmt->fetchAll();
+    $folders = $stmt->fetchAll();
+
+    $cache->set($cacheKey, $folders, 3600);
+    return $folders;
 }
 
 /**
  * Get upload stats by day for the last 7 days (for chart)
  */
 function getUploadStats(int $userId, int $days = 7): array {
+    $cache = RedisCache::getInstance();
+    $cacheKey = "user:uploadstats:{$userId}:{$days}";
+    $cachedStats = $cache->get($cacheKey);
+    if ($cachedStats !== null) {
+        return $cachedStats;
+    }
+
     $db = getDB();
     $stmt = $db->prepare("
         SELECT DATE(f.uploaded_at) as upload_date, COUNT(f.id) as file_count, COALESCE(SUM(f.file_size), 0) as total_size
@@ -264,13 +306,22 @@ function getUploadStats(int $userId, int $days = 7): array {
         }
     }
 
-    return array_values($data);
+    $formattedData = array_values($data);
+    $cache->set($cacheKey, $formattedData, 3600);
+    return $formattedData;
 }
 
 /**
  * Get file type distribution for user
  */
 function getFileTypeStats(int $userId): array {
+    $cache = RedisCache::getInstance();
+    $cacheKey = "user:filetype:{$userId}";
+    $cachedStats = $cache->get($cacheKey);
+    if ($cachedStats !== null) {
+        return $cachedStats;
+    }
+
     $db = getDB();
     $stmt = $db->prepare("
         SELECT f.file_extension, COUNT(f.id) as count, COALESCE(SUM(f.file_size), 0) as total_size
@@ -279,5 +330,8 @@ function getFileTypeStats(int $userId): array {
         GROUP BY f.file_extension ORDER BY count DESC
     ");
     $stmt->execute([$userId]);
-    return $stmt->fetchAll();
+    $stats = $stmt->fetchAll();
+
+    $cache->set($cacheKey, $stats, 3600);
+    return $stats;
 }

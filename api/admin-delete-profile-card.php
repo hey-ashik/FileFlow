@@ -52,6 +52,7 @@ try {
     $result = $stmt->execute([$user_id]);
     
     if ($result) {
+        clearUserCache($user_id);
         echo json_encode(['success' => true, 'message' => 'Profile card deleted successfully.']);
     } else {
         echo json_encode(['success' => false, 'errors' => ['Failed to update user record']]);

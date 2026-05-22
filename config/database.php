@@ -12,6 +12,13 @@ define('DB_USER', 'ashikone_fileflowuser');
 define('DB_PASS', 'Ashik@21032001');
 define('DB_CHARSET', 'utf8mb4');
 
+// Redis configuration
+define('REDIS_HOST', '127.0.0.1');
+define('REDIS_PORT', 52499);
+define('REDIS_PASS', 'GcKuKqim5daLCmh9ahM');
+define('REDIS_DB', 0);
+define('REDIS_ENABLED', true);
+
 /**
  * Get PDO database connection
  * 

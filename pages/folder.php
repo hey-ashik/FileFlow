@@ -46,7 +46,13 @@ if ($requiresPassword) {
     $pageTitle = 'Password Required - ' . APP_NAME;
     require_once __DIR__ . '/../includes/header.php';
     ?>
-    <section class="auth-page">
+    <div
+        style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+        <div class="hero-orb hero-orb-3"></div>
+    </div>
+    <section class="auth-page" style="position: relative; z-index: 1; background: transparent;">
         <div class="auth-card" style="text-align: center;">
             <div class="auth-icon" style="margin-bottom: 24px; background: var(--gray-50); color: var(--gray-600);">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -57,7 +63,8 @@ if ($requiresPassword) {
             <h1 style="font-size: 1.5rem; margin-bottom: 12px;">Password Protected</h1>
             <p style="color: var(--gray-500); margin-bottom: 32px;">The folder
                 <strong>"<?php echo htmlspecialchars($folder['display_name']); ?>"</strong> is protected. Please enter the
-                password to view its contents.</p>
+                password to view its contents.
+            </p>
 
             <form method="POST" class="auth-form">
                 <div class="form-group">
@@ -72,7 +79,8 @@ if ($requiresPassword) {
                     </div>
                     <?php if ($passwordError): ?>
                         <div class="input-hint error" style="margin-top: 8px; justify-content: flex-start;">
-                            <?php echo $passwordError; ?></div>
+                            <?php echo $passwordError; ?>
+                        </div>
                     <?php endif; ?>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top: 12px;">
@@ -104,15 +112,22 @@ if (!empty($folder['user_id'])) {
     $stmtUser->execute([$folder['user_id']]);
     $uRow = $stmtUser->fetch();
     if ($uRow && isset($uRow['file_upload_limit_mb'])) {
-        $customMaxFileSize = (int)$uRow['file_upload_limit_mb'] * 1024 * 1024;
+        $customMaxFileSize = (int) $uRow['file_upload_limit_mb'] * 1024 * 1024;
     }
 }
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
+<div
+    style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+</div>
+
 <!-- Folder Header -->
-<section class="folder-header" id="folder-header">
+<section class="folder-header" id="folder-header" style="position: relative; z-index: 1; background: transparent;">
     <div class="container">
         <div class="folder-breadcrumb">
             <a href="/" class="breadcrumb-link">
@@ -131,8 +146,8 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="folder-info">
             <div class="folder-info-left">
                 <div class="folder-icon-large">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                     </svg>
                 </div>
@@ -233,7 +248,7 @@ require_once __DIR__ . '/../includes/header.php';
 </section>
 
 <!-- Upload Section -->
-<section class="upload-section" id="upload-section">
+<section class="upload-section" id="upload-section" style="position: relative; z-index: 1; background: transparent;">
     <div class="container">
         <div class="upload-card" id="upload-card">
             <div class="upload-dropzone" id="upload-dropzone">
@@ -247,7 +262,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </svg>
                     </div>
                     <h3 class="dropzone-title">Drop files here or click to upload</h3>
-                    <p class="dropzone-subtitle">Supports PDF, DOCX, PPTX, XLSX, MP3, ZIP, JPG, PNG, WEBP</p>
+                    <!-- <p class="dropzone-subtitle">Supports PDF, DOCX, PPTX, XLSX, MP3, ZIP, JPG, PNG, WEBP</p> -->
                     <p class="dropzone-limit">Max <?php echo formatFileSize($customMaxFileSize); ?> per file • Up to
                         <?php echo MAX_FILES_PER_UPLOAD; ?> files at once
                     </p>
@@ -281,7 +296,7 @@ require_once __DIR__ . '/../includes/header.php';
 </section>
 
 <!-- Files List Section -->
-<section class="files-section" id="files-section">
+<section class="files-section" id="files-section" style="position: relative; z-index: 1; background: transparent;">
     <div class="container">
         <div class="files-header">
             <h2 class="files-title">
@@ -324,8 +339,10 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="file-card-actions" style="display:flex; gap:6px;">
                             <a href="/api/download?id=<?php echo $file['id']; ?>&preview=1" class="btn btn-sm btn-outline"
-                                title="Preview" target="_blank" style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                title="Preview" target="_blank"
+                                style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                                     <circle cx="12" cy="12" r="3" />
                                 </svg>

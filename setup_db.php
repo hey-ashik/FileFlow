@@ -68,6 +68,73 @@ try {
         echo "Created messages table.\n";
     } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
 
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `thoughts` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT UNSIGNED NOT NULL,
+            `content` TEXT DEFAULT NULL,
+            `media_paths` JSON DEFAULT NULL,
+            `link` VARCHAR(500) DEFAULT NULL,
+            `privacy` ENUM('public', 'friends', 'private') NOT NULL DEFAULT 'public',
+            `views` INT UNSIGNED NOT NULL DEFAULT 0,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "Created thoughts table.\n";
+    } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
+    
+    try {
+        $db->exec("ALTER TABLE thoughts ADD COLUMN privacy ENUM('public', 'friends', 'private') NOT NULL DEFAULT 'public'");
+        echo "Added privacy column to thoughts table.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `thought_likes` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `thought_id` BIGINT UNSIGNED NOT NULL,
+            `user_id` INT UNSIGNED NOT NULL,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            UNIQUE KEY `unique_like` (`thought_id`, `user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "Created thought_likes table.\n";
+    } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `thought_comments` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `thought_id` BIGINT UNSIGNED NOT NULL,
+            `user_id` INT UNSIGNED NOT NULL,
+            `parent_id` BIGINT UNSIGNED DEFAULT NULL,
+            `comment` TEXT NOT NULL,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`parent_id`) REFERENCES `thought_comments`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "Created thought_comments table.\n";
+    } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
+    
+    try {
+        $db->exec("ALTER TABLE thought_comments ADD COLUMN parent_id BIGINT UNSIGNED DEFAULT NULL;");
+        $db->exec("ALTER TABLE thought_comments ADD FOREIGN KEY (parent_id) REFERENCES thought_comments(id) ON DELETE CASCADE;");
+        echo "Added parent_id column to thought_comments table.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `thought_shares` (
+            `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `thought_id` BIGINT UNSIGNED NOT NULL,
+            `user_id` INT UNSIGNED NOT NULL,
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (`thought_id`) REFERENCES `thoughts`(`id`) ON DELETE CASCADE,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "Created thought_shares table.\n";
+    } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
+
     // Check if admin user exists
     $email = 'ashikulislam2070@gmail.com';
     $password = 'Ashik@21032001';

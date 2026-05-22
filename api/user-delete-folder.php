@@ -43,6 +43,7 @@ try {
             @rmdir($dirPath);
         }
         $db->prepare("DELETE FROM folders WHERE id = ?")->execute([$folderId]);
+        clearFolderCache($folder['slug'], $folderId, $user['id']);
     }
     
     jsonResponse(['success' => true]);

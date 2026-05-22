@@ -53,6 +53,7 @@ if ($action === 'update_profile') {
         $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ? WHERE id = ?");
         $stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $userId]);
         $_SESSION['user_name'] = $fullName; // update session
+        clearUserCache($userId);
         echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
     } catch (PDOException $e) {
         // Fallback: column might not exist. Create columns and tables, then retry.
@@ -99,6 +100,7 @@ if ($action === 'update_profile') {
             $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ? WHERE id = ?");
             if ($stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $userId])) {
                 $_SESSION['user_name'] = $fullName;
+                clearUserCache($userId);
                 echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to update profile']);
@@ -147,6 +149,7 @@ if ($action === 'upload_avatar') {
         $stmt = $db->prepare("UPDATE users SET avatar_path = ? WHERE id = ?");
         $stmt->execute([$publicPath, $userId]);
         $_SESSION['user_avatar'] = $publicPath;
+        clearUserCache($userId);
         
         echo json_encode(['success' => true, 'message' => 'Valid picture uploaded', 'avatar_path' => $publicPath]);
     } else {
@@ -190,6 +193,7 @@ if ($action === 'upload_cover') {
         $publicPath = '/uploads/covers/' . $filename;
         $stmt = $db->prepare("UPDATE users SET cover_path = ? WHERE id = ?");
         $stmt->execute([$publicPath, $userId]);
+        clearUserCache($userId);
         
         echo json_encode(['success' => true, 'message' => 'Cover photo uploaded successfully', 'cover_path' => $publicPath]);
     } else {
@@ -211,6 +215,7 @@ if ($action === 'remove_cover') {
     
     $stmt = $db->prepare("UPDATE users SET cover_path = NULL WHERE id = ?");
     $stmt->execute([$userId]);
+    clearUserCache($userId);
 
     echo json_encode(['success' => true, 'message' => 'Cover removed successfully']);
     exit;
@@ -230,6 +235,7 @@ if ($action === 'remove_avatar') {
     $stmt = $db->prepare("UPDATE users SET avatar_path = NULL WHERE id = ?");
     $stmt->execute([$userId]);
     $_SESSION['user_avatar'] = null;
+    clearUserCache($userId);
 
     echo json_encode(['success' => true, 'message' => 'Avatar removed successfully']);
     exit;
@@ -274,6 +280,7 @@ if ($action === 'upload_cv') {
         $publicPath = '/uploads/cv/' . $filename;
         $stmt = $db->prepare("UPDATE users SET cv_path = ? WHERE id = ?");
         $stmt->execute([$publicPath, $userId]);
+        clearUserCache($userId);
         
         echo json_encode(['success' => true, 'message' => 'CV uploaded successfully', 'cv_path' => $publicPath]);
     } else {
@@ -299,6 +306,7 @@ if ($action === 'remove_cv') {
     
     $stmt = $db->prepare("UPDATE users SET cv_path = NULL WHERE id = ?");
     $stmt->execute([$userId]);
+    clearUserCache($userId);
 
     echo json_encode(['success' => true, 'message' => 'CV removed successfully']);
     exit;

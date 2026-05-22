@@ -46,7 +46,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 
     <!-- Main Stylesheet -->
-    <?php $ver = '3.3.7'; // Premium UI Overhaul: Vertical Advanced Settings ?>
+    <?php $ver = '3.3.8'; // Premium UI Overhaul: Vertical Advanced Settings ?>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
 </head>
 
@@ -86,6 +86,16 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                         </svg>
                         <span>Home</span>
                     </a>
+                    <a href="/thoughts" class="nav-link <?php echo $currentPage === 'thoughts' ? 'active' : ''; ?>"
+                        id="nav-thoughts" data-no-spa="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
+                            </path>
+                        </svg>
+                        <span>Thoughts</span>
+                    </a>
                     <?php if (isLoggedIn()): ?>
                         <?php $currentUser = getCurrentUser(); ?>
                         <a href="/dashboard" class="nav-link <?php echo $currentPage === 'dashboard' ? 'active' : ''; ?>"
@@ -113,7 +123,8 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                         <a href="/login" class="nav-link <?php echo $currentPage === 'login' ? 'active' : ''; ?>"
                             id="nav-login">
                             <svg width="18" height="18" viewBox="0 0 512 512" fill="currentColor">
-                                <path d="M217.9 105.9L340.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L217.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1L32 320c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM352 416l64 0c17.7 0 32-14.3 32-32l0-256c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c53 0 96 43 96 96l0 256c0 53-43 96-96 96l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/>
+                                <path
+                                    d="M217.9 105.9L340.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L217.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1L32 320c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM352 416l64 0c17.7 0 32-14.3 32-32l0-256c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c53 0 96 43 96 96l0 256c0 53-43 96-96 96l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z" />
                             </svg>
                             <span>Login</span>
                         </a>
@@ -132,10 +143,12 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                 </div>
 
                 <div class="navbar-right-actions">
-                    <div class="nav-search-container">
+                    <div class="nav-search-container" style="position: relative;">
                         <form action="/search" method="GET" class="nav-search-pill">
-                            <input type="text" name="q" placeholder="Search profile..." autocomplete="off">
-                            <button type="submit" aria-label="Search" style="background: transparent; border: none; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--gray-500);">
+                            <input type="text" name="q" id="header-search-input" placeholder="Search profile..."
+                                autocomplete="off">
+                            <button type="submit" aria-label="Search"
+                                style="background: transparent; border: none; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--gray-500);">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <circle cx="11" cy="11" r="8"></circle>
@@ -143,6 +156,9 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                 </svg>
                             </button>
                         </form>
+                        <div id="header-search-results"
+                            style="display: none; position: absolute; top: 100%; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15); z-index: 9999; max-height: 400px; overflow-y: auto; margin-top: 0.5rem; border: 1px solid #e2e8f0; padding: 0.5rem;">
+                        </div>
                     </div>
 
                     <?php if (isLoggedIn()): ?>
@@ -189,7 +205,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                     </div>
                                 </div>
                                 <div class="nav-dropdown-divider"></div>
-                               
+
                                 <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
                                     <a href="/admin" class="nav-dropdown-item">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -199,7 +215,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                         Admin Panel
                                     </a>
                                 <?php endif; ?>
-                                 <a href="/dashboard" class="nav-dropdown-item">
+                                <a href="/dashboard" class="nav-dropdown-item">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
                                         <rect x="3" y="3" width="7" height="7" />
@@ -227,7 +243,8 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                 <a href="/logout" class="nav-dropdown-item nav-dropdown-logout"
                                     onclick="window.location.href='/logout'; return false;">
                                     <svg width="16" height="16" viewBox="0 0 512 512" fill="currentColor">
-                                        <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"/>
+                                        <path
+                                            d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
                                     </svg>
                                     <span>Logout</span>
                                 </a>
@@ -240,4 +257,98 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     </nav>
 
     <input type="hidden" id="csrf-token" value="<?php echo $csrfToken; ?>">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const headerSearchInput = document.getElementById('header-search-input');
+            const headerSearchResults = document.getElementById('header-search-results');
+            let headerSearchTimeout = null;
+
+            if (headerSearchInput && headerSearchResults) {
+                headerSearchInput.addEventListener('input', function () {
+                    const query = this.value.trim();
+
+                    // Sync with page search input if on search page
+                    const pageSearchInput = document.getElementById('profiles-search-input');
+                    if (pageSearchInput) {
+                        pageSearchInput.value = this.value;
+                        if (typeof window.searchProfiles === 'function') {
+                            window.searchProfiles();
+                        }
+                        return;
+                    }
+
+                    // Sync with page search input if on thoughts page
+                    const thoughtsSearchInput = document.getElementById('thoughts-search-input');
+                    if (thoughtsSearchInput) {
+                        thoughtsSearchInput.value = this.value;
+                        if (typeof window.searchThoughts === 'function') {
+                            window.searchThoughts();
+                        }
+                        return;
+                    }
+
+                    // Otherwise show dropdown
+                    clearTimeout(headerSearchTimeout);
+                    if (!query) {
+                        headerSearchResults.innerHTML = '';
+                        headerSearchResults.style.display = 'none';
+                        return;
+                    }
+
+                    headerSearchTimeout = setTimeout(async () => {
+                        headerSearchResults.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem 0; font-size: 0.9rem;">Searching...</div>';
+                        headerSearchResults.style.display = 'block';
+
+                        try {
+                            const res = await fetch(`/search?json=1&q=${encodeURIComponent(query)}`);
+                            const data = await res.json();
+
+                            if (data && data.length > 0) {
+                                let html = '<div style="display: flex; flex-direction: column; gap: 0.25rem;">';
+                                data.forEach(profile => {
+                                    const avatarColor = profile.avatar_color || '#16a34a';
+                                    const avatarHtml = profile.avatar_path
+                                        ? `<img src="${profile.avatar_path}" style="width: 100%; height: 100%; object-fit: cover;">`
+                                        : `<span>${(profile.full_name || 'U').substring(0, 1).toUpperCase()}</span>`;
+
+                                    html += `
+                                    <a href="/u/${profile.profile_slug}" data-no-spa="true" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 8px; transition: background 0.2s; text-decoration: none; color: inherit; text-align: left;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                        <div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: ${avatarColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; flex-shrink: 0;">
+                                            ${avatarHtml}
+                                        </div>
+                                        <div style="min-width: 0; flex: 1;">
+                                            <div style="font-weight: 600; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${profile.full_name}</div>
+                                            <div style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${profile.profile_slug}</div>
+                                        </div>
+                                    </a>
+                                `;
+                                });
+                                html += '</div>';
+                                headerSearchResults.innerHTML = html;
+                            } else {
+                                headerSearchResults.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem 0; font-size: 0.9rem;">No profiles found</div>';
+                            }
+                        } catch (err) {
+                            headerSearchResults.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 1rem 0; font-size: 0.9rem;">Error searching</div>';
+                        }
+                    }, 300);
+                });
+
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', function (e) {
+                    if (!headerSearchInput.contains(e.target) && !headerSearchResults.contains(e.target)) {
+                        headerSearchResults.style.display = 'none';
+                    }
+                });
+
+                // Show dropdown on focus if input has value
+                headerSearchInput.addEventListener('focus', function () {
+                    if (this.value.trim() && !document.getElementById('profiles-search-input') && !document.getElementById('thoughts-search-input')) {
+                        headerSearchResults.style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
     <main class="main-content">
