@@ -69,16 +69,16 @@ FileFlow uses Apache's `mod_rewrite` to channel clean URLs through a single-entr
 ```mermaid
 graph TD
     A[Client Request] --> B{Apache Rewrite Engine}
-    B -- Static Asset /assets/* -- L --> C[Serve Static Asset]
-    B -- All Other Requests -- Rewrite --> D[index.php Router]
+    B -->|Static Asset /assets/* [L]| C[Serve Static Asset]
+    B -->|All Other Requests [Rewrite]| D[index.php Router]
     D --> E{Router Switch}
-    E -- Auth/Dashboard/Static Pages --> F[Load PHP Templates in /pages]
-    E -- API Endpoints /api/* --> G[Process API in /api]
-    E -- User Profile Card /u/* --> H[Serve pages/profile-card.php]
-    E -- Single Thought /p/* --> I[Serve pages/single-thought.php]
-    E -- Default Catch-All Slug --> J{Validate Slug in DB}
-    J -- Found --> K[Serve pages/folder.php]
-    J -- Not Found --> L[Serve pages/error.php]
+    E -->|Auth/Dashboard/Static Pages| F[Load PHP Templates in /pages]
+    E -->|API Endpoints /api/*| G[Process API in /api]
+    E -->|User Profile Card /u/*| H[Serve pages/profile-card.php]
+    E -->|Single Thought /p/*| I[Serve pages/single-thought.php]
+    E -->|Default Catch-All Slug| J{Validate Slug in DB}
+    J -->|Found| K[Serve pages/folder.php]
+    J -->|Not Found| L[Serve pages/error.php]
 ```
 
 ### 2. Client-Side SPA & Prefetch Lifecycle
