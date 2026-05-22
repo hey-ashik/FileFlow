@@ -39,14 +39,29 @@ function renderThoughtCard($thought, $currentUserId = null, $isSinglePage = fals
     
     $mediaPaths = !empty($thought['media_paths']) ? json_decode($thought['media_paths'], true) : [];
     
-    // Format content with hyperlinks
+    // Format content with hyperlinks and markdown formatting
     $content = htmlspecialchars($thought['content']);
-    $content = preg_replace('/(https?:\/\/[^\s]+)/', '<a href="$1" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>', $content);
+    $content = preg_replace('/&lt;u&gt;(.*?)&lt;\/u&gt;/is', '<u>$1</u>', $content);
+    $content = preg_replace('/&lt;span\s+style=&quot;font-family:\s*(.*?);?&quot;&gt;(.*?)&lt;\/span&gt;/is', '<span style="font-family: $1;">$2</span>', $content);
+    $content = preg_replace('/\[(.*?)\]\((.*?)\)/s', '<a href="$2" target="_blank" onclick="event.stopPropagation();" style="color: var(--green-600); text-decoration: underline;">$1</a>', $content);
+    $content = preg_replace('/(?<!href=")(?<!href=&quot;)(?<!=")(?<!=&quot;)(https?:\/\/[^\s\)<>"\']+)/', '<a href="$1" target="_blank" onclick="event.stopPropagation();" style="color: var(--green-600); text-decoration: underline;">$1</a>', $content);
+    $content = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $content);
+    $content = preg_replace('/\*([^\*]+)\*/s', '<em>$1</em>', $content);
     
     $linkHtml = '';
     if (!empty($thought['link'])) {
-        $linkUrl = htmlspecialchars($thought['link']);
-        $linkHtml = '<a href="' . $linkUrl . '" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; color: var(--green-600); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' . (strlen($linkUrl) > 40 ? substr($linkUrl, 0, 40) . '...' : $linkUrl) . '</a>';
+        $links = json_decode($thought['link'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($links)) {
+            foreach ($links as $linkUrl) {
+                if (!empty($linkUrl)) {
+                    $linkUrlEsc = htmlspecialchars($linkUrl);
+                    $linkHtml .= '<a href="' . $linkUrlEsc . '" target="_blank" onclick="event.stopPropagation();" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; color: var(--green-600); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-right: 0.5rem; margin-bottom: 1rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' . (strlen($linkUrlEsc) > 40 ? substr($linkUrlEsc, 0, 40) . '...' : $linkUrlEsc) . '</a>';
+                }
+            }
+        } else {
+            $linkUrl = htmlspecialchars($thought['link']);
+            $linkHtml = '<a href="' . $linkUrl . '" target="_blank" onclick="event.stopPropagation();" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #f1f5f9; color: var(--green-600); padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' . (strlen($linkUrl) > 40 ? substr($linkUrl, 0, 40) . '...' : $linkUrl) . '</a>';
+        }
     }
     
     $privacy = $thought['privacy'] ?? 'public';

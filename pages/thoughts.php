@@ -81,14 +81,21 @@ $isLoggedInUser = isLoggedIn();
                     style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; <?php echo $avatarStyle; ?>">
                     <?php echo $avatar; ?>
                 </div>
-                <textarea id="thought-content" placeholder="Share your current thoughts..."
-                    style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.75rem; min-height: 80px; resize: vertical; font-family: inherit; font-size: 1rem; outline: none;"></textarea>
+                <div id="thought-editor-container" style="flex: 1; display: flex; flex-direction: column;"></div>
             </div>
 
-            <div class="thought-input-row"
-                style="display: flex; gap: 1rem; margin-bottom: 1rem; padding-left: calc(48px + 1rem);">
-                <input type="text" id="thought-link" placeholder="Share a link (optional)"
-                    style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5rem 0.75rem; font-family: inherit; font-size: 0.95rem; outline: none;">
+            <div class="thought-input-row" style="margin-bottom: 1rem; padding-left: calc(48px + 1rem); display: flex;">
+                <div id="thought-links-container" style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                        <input type="text" class="thought-link-input" placeholder="Share a link (optional)"
+                            style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5rem 0.75rem; font-family: inherit; font-size: 0.95rem; outline: none;">
+                        <button type="button" onclick="addLinkInput()"
+                            style="background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--gray-700); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: background 0.2s;"
+                            title="Add another link">
+                            +
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div id="media-count"
@@ -97,7 +104,7 @@ $isLoggedInUser = isLoggedIn();
             <div class="thought-input-actions"
                 style="display: flex; align-items: center; justify-content: space-between; padding-left: calc(48px + 1rem);">
                 <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                    <select id="thought-privacy"
+                    <select id="thought-privacy" class="custom-select-arrow"
                         style="border: 1px solid #cbd5e1; border-radius: 9999px; padding: 0.5rem 1rem; font-family: inherit; font-size: 0.85rem; outline: none; background: white; color: var(--gray-700); cursor: pointer;">
                         <option value="public">Public</option>
                         <option value="friends">Friends</option>
@@ -141,6 +148,20 @@ $isLoggedInUser = isLoggedIn();
 </div>
 
 <script>
+    (function() {
+        const init = () => {
+            const container = document.getElementById('thought-editor-container');
+            if (container) {
+                initializeRichTextEditor(container, 'thought-content', 'Share your current thoughts...', '');
+            }
+        };
+        if (typeof initializeRichTextEditor !== 'undefined') {
+            init();
+        } else {
+            document.addEventListener('DOMContentLoaded', init);
+        }
+    })();
+
     window.updateMediaCount = function () {
         const input = document.getElementById('thought-media');
         const display = document.getElementById('media-count');
@@ -152,9 +173,71 @@ $isLoggedInUser = isLoggedIn();
         }
     }
 
+    window.addLinkInput = function() {
+        const container = document.getElementById('thought-links-container');
+        const totalInputs = container.querySelectorAll('.thought-link-input').length;
+        if (totalInputs >= 5) {
+            alert('You can add up to 5 links.');
+            return;
+        }
+        
+        const newDiv = document.createElement('div');
+        newDiv.className = 'thought-link-input-item';
+        newDiv.style.display = 'flex';
+        newDiv.style.gap = '0.5rem';
+        newDiv.style.alignItems = 'center';
+        newDiv.style.width = '100%';
+        
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.className = 'thought-link-input';
+        newInput.placeholder = 'Share another link (optional)';
+        newInput.style.flex = '1';
+        newInput.style.border = '1px solid #cbd5e1';
+        newInput.style.borderRadius = '8px';
+        newInput.style.padding = '0.5rem 0.75rem';
+        newInput.style.fontFamily = 'inherit';
+        newInput.style.fontSize = '0.95rem';
+        newInput.style.outline = 'none';
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.style.background = '#fee2e2';
+        removeBtn.style.border = '1px solid #fca5a5';
+        removeBtn.style.color = '#ef4444';
+        removeBtn.style.width = '36px';
+        removeBtn.style.height = '36px';
+        removeBtn.style.borderRadius = '8px';
+        removeBtn.style.display = 'flex';
+        removeBtn.style.alignItems = 'center';
+        removeBtn.style.justifyContent = 'center';
+        removeBtn.style.fontWeight = 'bold';
+        removeBtn.style.fontSize = '1.2rem';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.onclick = () => {
+            newDiv.remove();
+        };
+        
+        newDiv.appendChild(newInput);
+        newDiv.appendChild(removeBtn);
+        container.appendChild(newDiv);
+        newInput.focus();
+    };
+
     window.createThought = function () {
         const content = document.getElementById('thought-content').value.trim();
-        const link = document.getElementById('thought-link').value.trim();
+        
+        const linkInputs = document.querySelectorAll('.thought-link-input');
+        let link = '';
+        if (linkInputs.length > 0) {
+            const links = Array.from(linkInputs).map(inp => inp.value.trim()).filter(v => v !== '');
+            if (links.length > 1) {
+                link = JSON.stringify(links);
+            } else if (links.length === 1) {
+                link = links[0];
+            }
+        }
         const mediaFiles = document.getElementById('thought-media').files;
 
         for (let i = 0; i < mediaFiles.length; i++) {
@@ -269,7 +352,20 @@ $isLoggedInUser = isLoggedIn();
                 }
                 
                 document.getElementById('thought-content').value = '';
-                document.getElementById('thought-link').value = '';
+                const linkContainer = document.getElementById('thought-links-container');
+                if (linkContainer) {
+                    linkContainer.innerHTML = `
+                        <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%;">
+                            <input type="text" class="thought-link-input" placeholder="Share a link (optional)"
+                                style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.5rem 0.75rem; font-family: inherit; font-size: 0.95rem; outline: none;">
+                            <button type="button" onclick="addLinkInput()"
+                                style="background: #f1f5f9; border: 1px solid #cbd5e1; color: var(--gray-700); width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: background 0.2s;"
+                                title="Add another link">
+                                +
+                            </button>
+                        </div>
+                    `;
+                }
                 document.getElementById('thought-media').value = '';
                 updateMediaCount();
                 loadFeedThoughts();
@@ -507,15 +603,10 @@ $isLoggedInUser = isLoggedIn();
         container.id = `thought-edit-container-${thoughtId}`;
         container.style.marginBottom = '1rem';
 
-        const textarea = document.createElement('textarea');
-        textarea.style.width = '100%';
-        textarea.style.minHeight = '80px';
-        textarea.style.padding = '0.5rem';
-        textarea.style.borderRadius = '8px';
-        textarea.style.border = '1px solid #cbd5e1';
-        textarea.style.marginBottom = '0.5rem';
-        textarea.style.fontFamily = 'inherit';
-        textarea.value = rawDiv.textContent;
+        const editorContainer = document.createElement('div');
+        editorContainer.style.marginBottom = '0.5rem';
+        initializeRichTextEditor(editorContainer, 'thought-edit-content-' + thoughtId, 'Edit your thought...', rawDiv.textContent);
+        const textarea = editorContainer.querySelector('textarea');
 
         const linkInput = document.createElement('input');
         linkInput.type = 'text';
@@ -551,17 +642,18 @@ $isLoggedInUser = isLoggedIn();
 
             removeLabel.appendChild(removeMediaCheckbox);
             removeLabel.appendChild(document.createTextNode('Remove existing media (or select files above to replace them)'));
-            container.appendChild(textarea);
+            container.appendChild(editorContainer);
             container.appendChild(linkInput);
             container.appendChild(fileInput);
             container.appendChild(removeLabel);
         } else {
-            container.appendChild(textarea);
+            container.appendChild(editorContainer);
             container.appendChild(linkInput);
             container.appendChild(fileInput);
         }
 
         const privacySelect = document.createElement('select');
+        privacySelect.className = 'custom-select-arrow';
         privacySelect.style.border = '1px solid #cbd5e1';
         privacySelect.style.borderRadius = '8px';
         privacySelect.style.padding = '0.5rem 1rem';
@@ -655,11 +747,12 @@ $isLoggedInUser = isLoggedIn();
         displayDiv.parentNode.insertBefore(container, displayDiv.nextSibling);
     };
 
-    window.editComment = function (commentId) {
+    window.editComment = function (commentId, thoughtId) {
         const displayDiv = document.getElementById(`comment-content-${commentId}`);
+        const rawDiv = document.getElementById(`comment-content-raw-${commentId}`);
         if (document.getElementById(`comment-edit-container-${commentId}`)) return;
 
-        const originalText = displayDiv.textContent;
+        const originalText = rawDiv ? rawDiv.textContent : displayDiv.textContent;
         const container = document.createElement('div');
         container.id = `comment-edit-container-${commentId}`;
         container.style.marginTop = '0.5rem';
@@ -713,9 +806,9 @@ $isLoggedInUser = isLoggedIn();
                 const data = await res.json();
 
                 if (data.success) {
-                    displayDiv.textContent = newText;
                     container.remove();
                     displayDiv.style.display = 'block';
+                    window.loadComments(thoughtId);
                 } else {
                     alert(data.message || 'Error editing comment.');
                     saveBtn.textContent = 'Save';

@@ -41,12 +41,13 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
 
     <!-- Main Stylesheet -->
-    <?php $ver = '3.3.8'; // Premium UI Overhaul: Vertical Advanced Settings ?>
+    <?php $ver = '3.4.3'; // Premium UI Overhaul: Custom dropdown select arrow alignment ?>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
 </head>
 

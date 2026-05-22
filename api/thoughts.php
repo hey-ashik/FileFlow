@@ -434,7 +434,16 @@ if ($action === 'get_comments') {
             if ($currentUserId && isset($_SESSION['is_admin'])) $isAdmin = $_SESSION['is_admin'];
             $canDeleteComment = $canEditComment || $isAdmin;
             
-            echo '<div id="comment-content-' . $comment['id'] . '" style="font-size: 0.95rem; color: var(--gray-900); margin-top: 0.25rem; white-space:pre-wrap; word-break: break-word;">' . htmlspecialchars($comment['comment']) . '</div>';
+            $commentContent = htmlspecialchars($comment['comment']);
+            $commentContent = preg_replace('/&lt;u&gt;(.*?)&lt;\/u&gt;/is', '<u>$1</u>', $commentContent);
+            $commentContent = preg_replace('/&lt;span\s+style=&quot;font-family:\s*(.*?);?&quot;&gt;(.*?)&lt;\/span&gt;/is', '<span style="font-family: $1;">$2</span>', $commentContent);
+            $commentContent = preg_replace('/\[(.*?)\]\((.*?)\)/s', '<a href="$2" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>', $commentContent);
+            $commentContent = preg_replace('/(?<!href=")(?<!href=&quot;)(?<!=")(?<!=&quot;)(https?:\/\/[^\s\)<>"\']+)/', '<a href="$1" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>', $commentContent);
+            $commentContent = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $commentContent);
+            $commentContent = preg_replace('/\*([^\*]+)\*/s', '<em>$1</em>', $commentContent);
+
+            echo '<div id="comment-content-' . $comment['id'] . '" style="font-size: 0.95rem; color: var(--gray-900); margin-top: 0.25rem; white-space:pre-wrap; word-break: break-word;">' . $commentContent . '</div>';
+            echo '<div id="comment-content-raw-' . $comment['id'] . '" style="display:none;">' . htmlspecialchars($comment['comment']) . '</div>';
             
             echo '<div style="display: flex; gap: 1rem; margin-top: 0.5rem; align-items: center;">';
             if ($currentUserId) {
@@ -442,7 +451,7 @@ if ($action === 'get_comments') {
             }
             if ($canEditComment || $canDeleteComment) {
                 if ($canEditComment) {
-                    echo '<button onclick="editComment(' . $comment['id'] . ')" style="background: none; border: none; color: var(--gray-600); cursor: pointer; padding: 0; font-weight:600; font-size:0.75rem;" title="Edit">Edit</button>';
+                    echo '<button onclick="editComment(' . $comment['id'] . ', ' . $thoughtId . ')" style="background: none; border: none; color: var(--gray-600); cursor: pointer; padding: 0; font-weight:600; font-size:0.75rem;" title="Edit">Edit</button>';
                 }
                 if ($canDeleteComment) {
                     echo '<button onclick="deleteComment(' . $comment['id'] . ', ' . $thoughtId . ')" style="background: none; border: none; color: var(--gray-600); cursor: pointer; padding: 0; font-weight:600; font-size:0.75rem;" title="Delete">Delete</button>';

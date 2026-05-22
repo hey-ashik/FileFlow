@@ -843,15 +843,10 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
             container.id = `thought-edit-container-${thoughtId}`;
             container.style.marginBottom = '1rem';
             
-            const textarea = document.createElement('textarea');
-            textarea.style.width = '100%';
-            textarea.style.minHeight = '80px';
-            textarea.style.padding = '0.5rem';
-            textarea.style.borderRadius = '8px';
-            textarea.style.border = '1px solid #cbd5e1';
-            textarea.style.marginBottom = '0.5rem';
-            textarea.style.fontFamily = 'inherit';
-            textarea.value = rawDiv.textContent;
+            const editorContainer = document.createElement('div');
+            editorContainer.style.marginBottom = '0.5rem';
+            initializeRichTextEditor(editorContainer, 'thought-edit-content-' + thoughtId, 'Edit your thought...', rawDiv.textContent);
+            const textarea = editorContainer.querySelector('textarea');
             
             const linkInput = document.createElement('input');
             linkInput.type = 'text';
@@ -887,17 +882,18 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                 
                 removeLabel.appendChild(removeMediaCheckbox);
                 removeLabel.appendChild(document.createTextNode('Remove existing media (or select files above to replace them)'));
-                container.appendChild(textarea);
+                container.appendChild(editorContainer);
                 container.appendChild(linkInput);
                 container.appendChild(fileInput);
                 container.appendChild(removeLabel);
             } else {
-                container.appendChild(textarea);
+                container.appendChild(editorContainer);
                 container.appendChild(linkInput);
                 container.appendChild(fileInput);
             }
             
             const privacySelect = document.createElement('select');
+            privacySelect.className = 'custom-select-arrow';
             privacySelect.style.border = '1px solid #cbd5e1';
             privacySelect.style.borderRadius = '8px';
             privacySelect.style.padding = '0.5rem 1rem';
@@ -986,11 +982,12 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
             displayDiv.parentNode.insertBefore(container, displayDiv.nextSibling);
         };
 
-        window.editComment = function(commentId) {
+        window.editComment = function(commentId, thoughtId) {
             const displayDiv = document.getElementById(`comment-content-${commentId}`);
+            const rawDiv = document.getElementById(`comment-content-raw-${commentId}`);
             if (document.getElementById(`comment-edit-container-${commentId}`)) return;
             
-            const originalText = displayDiv.textContent;
+            const originalText = rawDiv ? rawDiv.textContent : displayDiv.textContent;
             const container = document.createElement('div');
             container.id = `comment-edit-container-${commentId}`;
             container.style.marginTop = '0.5rem';
@@ -1044,9 +1041,9 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                     const data = await res.json();
                     
                     if (data.success) {
-                        displayDiv.textContent = newText;
                         container.remove();
                         displayDiv.style.display = 'block';
+                        window.loadComments(thoughtId);
                     } else {
                         alert(data.message || 'Error editing comment.');
                         saveBtn.textContent = 'Save';

@@ -9,6 +9,551 @@ const MAX_CONCURRENT_UPLOADS = 5;
 
 let isGlobalInitDone = false;
 
+window.formatTextarea = function (textarea, type) {
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    let replacement = '';
+    let cursorOffset = 0;
+
+    if (type === 'bold') {
+        replacement = `**${selected}**`;
+        cursorOffset = selected ? replacement.length : 2;
+    } else if (type === 'italic') {
+        replacement = `*${selected}*`;
+        cursorOffset = selected ? replacement.length : 1;
+    } else if (type === 'underline') {
+        replacement = `<u>${selected}</u>`;
+        cursorOffset = selected ? replacement.length : 3;
+    } else if (type === 'link') {
+        const url = prompt('Enter link URL:');
+        if (url) {
+            replacement = `[${selected || 'link'}](${url})`;
+            cursorOffset = replacement.length;
+        } else {
+            return;
+        }
+    }
+
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    textarea.focus();
+    textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
+};
+
+window.customLinkPrompt = function (title, placeholderValue, callback, onRemove) {
+    let modal = document.getElementById('custom-link-prompt-modal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'custom-link-prompt-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(15, 23, 42, 0.45)';
+    modal.style.backdropFilter = 'blur(4px)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '99999';
+    modal.style.opacity = '0';
+    modal.style.transition = 'opacity 0.2s ease-out';
+
+    const content = document.createElement('div');
+    content.style.backgroundColor = '#ffffff';
+    content.style.borderRadius = '16px';
+    content.style.padding = '1.25rem';
+    content.style.width = '90%';
+    content.style.maxWidth = '400px';
+    content.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+    content.style.transform = 'scale(0.95)';
+    content.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    content.style.border = '1px solid #e2e8f0';
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = title;
+    titleEl.style.fontSize = '1.1rem';
+    titleEl.style.fontWeight = '600';
+    titleEl.style.color = '#0f172a';
+    titleEl.style.margin = '0 0 1rem 0';
+    titleEl.style.fontFamily = 'inherit';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = placeholderValue;
+    input.style.width = '100%';
+    input.style.border = '1px solid #cbd5e1';
+    input.style.borderRadius = '10px';
+    input.style.padding = '0.625rem 0.875rem';
+    input.style.fontSize = '0.95rem';
+    input.style.fontFamily = 'inherit';
+    input.style.outline = 'none';
+    input.style.transition = 'border-color 0.2s';
+    input.style.marginBottom = '1.25rem';
+    input.style.boxSizing = 'border-box';
+    input.onfocus = () => input.style.borderColor = 'var(--green-600)';
+    input.onblur = () => input.style.borderColor = '#cbd5e1';
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '6px';
+    actions.style.justifyContent = onRemove ? 'space-between' : 'flex-end';
+    actions.style.flexWrap = 'nowrap';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.padding = '0.45rem 0.85rem';
+    cancelBtn.style.borderRadius = '9999px';
+    cancelBtn.style.background = '#f1f5f9';
+    cancelBtn.style.color = '#475569';
+    cancelBtn.style.border = '1px solid #e2e8f0';
+    cancelBtn.style.fontWeight = '600';
+    cancelBtn.style.fontSize = '0.85rem';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.transition = 'background 0.2s';
+    cancelBtn.onmouseover = () => cancelBtn.style.background = '#e2e8f0';
+    cancelBtn.onmouseout = () => cancelBtn.style.background = '#f1f5f9';
+    actions.appendChild(cancelBtn);
+
+    let removeBtn = null;
+    if (onRemove) {
+        removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.style.padding = '0.45rem 0.85rem';
+        removeBtn.style.borderRadius = '9999px';
+        removeBtn.style.background = '#fef2f2';
+        removeBtn.style.color = '#ef4444';
+        removeBtn.style.border = '1px solid #fee2e2';
+        removeBtn.style.fontWeight = '600';
+        removeBtn.style.fontSize = '0.85rem';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.transition = 'background 0.2s';
+        removeBtn.onmouseover = () => removeBtn.style.background = '#fde2e2';
+        removeBtn.onmouseout = () => removeBtn.style.background = '#fef2f2';
+        actions.appendChild(removeBtn);
+    }
+
+    const okBtn = document.createElement('button');
+    okBtn.type = 'button';
+    okBtn.textContent = 'Add';
+    okBtn.style.padding = '0.45rem 0.85rem';
+    okBtn.style.borderRadius = '9999px';
+    okBtn.style.background = 'var(--green-600)';
+    okBtn.style.color = '#ffffff';
+    okBtn.style.border = 'none';
+    okBtn.style.fontWeight = '600';
+    okBtn.style.fontSize = '0.85rem';
+    okBtn.style.cursor = 'pointer';
+    okBtn.style.transition = 'opacity 0.2s';
+    okBtn.onmouseover = () => okBtn.style.opacity = '0.9';
+    okBtn.onmouseout = () => okBtn.style.opacity = '1';
+    actions.appendChild(okBtn);
+
+    content.appendChild(titleEl);
+    content.appendChild(input);
+    content.appendChild(actions);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        content.style.transform = 'scale(1)';
+    }, 10);
+
+    const close = () => {
+        modal.style.opacity = '0';
+        content.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            modal.remove();
+        }, 200);
+    };
+
+    cancelBtn.onclick = close;
+
+    if (removeBtn) {
+        removeBtn.onclick = () => {
+            onRemove();
+            close();
+        };
+    }
+
+    okBtn.onclick = () => {
+        const val = input.value.trim();
+        if (val) {
+            callback(val);
+        }
+        close();
+    };
+
+    input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            okBtn.click();
+        } else if (e.key === 'Escape') {
+            cancelBtn.click();
+        }
+    };
+
+    input.focus();
+};
+
+window.initializeRichTextEditor = function (container, textareaId, placeholder, initialValue, styleOptions = {}) {
+    // 1. Create hidden textarea
+    const hiddenTextarea = document.createElement('textarea');
+    hiddenTextarea.id = textareaId;
+    hiddenTextarea.name = textareaId;
+    hiddenTextarea.style.display = 'none';
+
+    // 2. Create toolbar
+    const toolbar = document.createElement('div');
+    toolbar.style.display = 'flex';
+    toolbar.style.gap = '0.25rem';
+    toolbar.style.alignItems = 'center';
+    toolbar.style.background = '#f8fafc';
+    toolbar.style.border = '1px solid #cbd5e1';
+    toolbar.style.borderBottom = 'none';
+    toolbar.style.borderRadius = '8px 8px 0 0';
+    toolbar.style.padding = '4px 8px';
+
+    const boldBtn = document.createElement('button');
+    boldBtn.type = 'button';
+    boldBtn.textContent = 'B';
+    boldBtn.style.fontWeight = 'bold';
+    boldBtn.style.background = 'none';
+    boldBtn.style.border = 'none';
+    boldBtn.style.borderRadius = '4px';
+    boldBtn.style.width = '28px';
+    boldBtn.style.height = '28px';
+    boldBtn.style.cursor = 'pointer';
+    boldBtn.style.fontSize = '0.95rem';
+    boldBtn.style.color = 'var(--gray-700)';
+    boldBtn.style.transition = 'background 0.2s';
+    boldBtn.onmouseover = () => boldBtn.style.background = '#e2e8f0';
+    boldBtn.onmouseout = () => boldBtn.style.background = 'none';
+    boldBtn.title = 'Bold (Ctrl+B)';
+
+    const italicBtn = document.createElement('button');
+    italicBtn.type = 'button';
+    italicBtn.textContent = 'I';
+    italicBtn.style.fontFamily = "'Georgia', serif";
+    italicBtn.style.fontStyle = 'italic';
+    italicBtn.style.fontWeight = 'bold';
+    italicBtn.style.background = 'none';
+    italicBtn.style.border = 'none';
+    italicBtn.style.borderRadius = '4px';
+    italicBtn.style.width = '28px';
+    italicBtn.style.height = '28px';
+    italicBtn.style.cursor = 'pointer';
+    italicBtn.style.fontSize = '0.95rem';
+    italicBtn.style.color = 'var(--gray-700)';
+    italicBtn.style.transition = 'background 0.2s';
+    italicBtn.onmouseover = () => italicBtn.style.background = '#e2e8f0';
+    italicBtn.onmouseout = () => italicBtn.style.background = 'none';
+    italicBtn.title = 'Italic (Ctrl+I)';
+
+    const underlineBtn = document.createElement('button');
+    underlineBtn.type = 'button';
+    underlineBtn.textContent = 'U';
+    underlineBtn.style.textDecoration = 'underline';
+    underlineBtn.style.fontWeight = 'bold';
+    underlineBtn.style.background = 'none';
+    underlineBtn.style.border = 'none';
+    underlineBtn.style.borderRadius = '4px';
+    underlineBtn.style.width = '28px';
+    underlineBtn.style.height = '28px';
+    underlineBtn.style.cursor = 'pointer';
+    underlineBtn.style.fontSize = '0.95rem';
+    underlineBtn.style.color = 'var(--gray-700)';
+    underlineBtn.style.transition = 'background 0.2s';
+    underlineBtn.onmouseover = () => underlineBtn.style.background = '#e2e8f0';
+    underlineBtn.onmouseout = () => underlineBtn.style.background = 'none';
+    underlineBtn.title = 'Underline (Ctrl+U)';
+
+    const linkBtn = document.createElement('button');
+    linkBtn.type = 'button';
+    linkBtn.innerHTML = '<i class="fa-solid fa-link" style="font-size: 0.85rem; color: var(--gray-600);"></i>';
+    linkBtn.style.background = 'none';
+    linkBtn.style.border = 'none';
+    linkBtn.style.borderRadius = '4px';
+    linkBtn.style.width = '28px';
+    linkBtn.style.height = '28px';
+    linkBtn.style.cursor = 'pointer';
+    linkBtn.style.fontSize = '0.9rem';
+    linkBtn.style.color = 'var(--gray-700)';
+    linkBtn.style.transition = 'background 0.2s';
+    linkBtn.onmouseover = () => linkBtn.style.background = '#e2e8f0';
+    linkBtn.onmouseout = () => linkBtn.style.background = 'none';
+    linkBtn.title = 'Insert Link';
+
+    const fontSelect = document.createElement('select');
+    fontSelect.className = 'font-select-arrow';
+    fontSelect.style.border = '1px solid #cbd5e1';
+    fontSelect.style.borderRadius = '6px';
+    fontSelect.style.padding = '2px 4px';
+    fontSelect.style.fontSize = '0.8rem';
+    fontSelect.style.color = 'var(--gray-700)';
+    fontSelect.style.background = '#ffffff';
+    fontSelect.style.cursor = 'pointer';
+    fontSelect.style.marginLeft = '0.5rem';
+    fontSelect.style.fontFamily = 'inherit';
+    fontSelect.style.outline = 'none';
+    fontSelect.title = 'Select Font';
+
+    const fonts = [
+        { name: 'Default Font', value: '' },
+        { name: 'Inter (Sans)', value: 'Inter, sans-serif' },
+        { name: 'Georgia (Serif)', value: 'Georgia, serif' },
+        { name: 'Courier (Mono)', value: 'Courier New, monospace' },
+        { name: 'Cursive', value: 'cursive' }
+    ];
+
+    fonts.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.value;
+        opt.textContent = f.name;
+        fontSelect.appendChild(opt);
+    });
+
+    toolbar.appendChild(boldBtn);
+    toolbar.appendChild(italicBtn);
+    toolbar.appendChild(underlineBtn);
+    toolbar.appendChild(linkBtn);
+    toolbar.appendChild(fontSelect);
+
+    // 3. Create contenteditable editor div
+    const editor = document.createElement('div');
+    editor.contentEditable = 'true';
+    editor.className = 'rich-editor';
+    editor.style.width = styleOptions.width || '100%';
+    editor.style.minHeight = styleOptions.minHeight || '80px';
+    editor.style.maxHeight = '300px';
+    editor.style.overflowY = 'auto';
+    editor.style.padding = '0.75rem';
+    editor.style.borderRadius = '0 0 8px 8px';
+    editor.style.border = '1px solid #cbd5e1';
+    editor.style.fontFamily = 'inherit';
+    editor.style.fontSize = '1rem';
+    editor.style.outline = 'none';
+    editor.style.background = '#ffffff';
+    editor.style.color = initialValue ? 'var(--gray-900)' : '#94a3b8';
+
+    // Convert functions
+    function convertMarkdownToHtml(md) {
+        if (!md) return '';
+        // Escape HTML
+        let html = md
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/gi, '<u>$1</u>');
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>');
+        html = html.replace(/&lt;span\s+style=(?:&quot;|"|')font-family:\s*(.*?);?(?:&quot;|"|')&gt;(.*?)&lt;\/span&gt;/gi, '<span style="font-family: $1;">$2</span>');
+        html = html.replace(/\n/g, '<br>');
+        return html;
+    }
+
+    function convertHtmlToMarkdown(html) {
+        if (!html || (placeholder && html === placeholder)) return '';
+        let md = html;
+
+        // 1. Convert supported structures to safe markers
+        md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+        md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+        md = md.replace(/<u[^>]*>(.*?)<\/u>/gi, '__U_START__$1__U_END__');
+        md = md.replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '__LINK_START_[$1]__$2__LINK_END__');
+        md = md.replace(/<font\s+face="([^"]+)"[^>]*>(.*?)<\/font>/gi, '__FONT_START_[$1]__$2__FONT_END__');
+        md = md.replace(/<span\s+style="font-family:\s*([^";]+);?"[^>]*>(.*?)<\/span>/gi, '__FONT_START_[$1]__$2__FONT_END__');
+
+        // Convert block tags and line breaks to plain newlines
+        md = md.replace(/<br\s*\/?>/gi, '\n');
+        md = md.replace(/<div[^>]*>(.*?)<\/div>/gi, '\n$1');
+        md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '\n$1');
+
+        // 2. Strip all remaining HTML tags
+        const temp = document.createElement('div');
+        temp.innerHTML = md;
+        let text = temp.textContent || temp.innerText || '';
+
+        // 3. Convert markers back to final markdown format
+        text = text.replace(/__U_START__(.*?)__U_END__/gi, '<u>$1</u>');
+        text = text.replace(/__LINK_START_\[(.*?)\]__(.*?)__LINK_END__/gi, '[$2]($1)');
+        text = text.replace(/__FONT_START_\[(.*?)\]__(.*?)__FONT_END__/gi, '<span style="font-family: $1;">$2</span>');
+
+        return text.trim();
+    }
+
+    if (placeholder) {
+        editor.innerHTML = initialValue ? convertMarkdownToHtml(initialValue) : placeholder;
+
+        editor.addEventListener('focus', () => {
+            if (editor.innerHTML === placeholder) {
+                editor.innerHTML = '';
+                editor.style.color = 'var(--gray-900)';
+            }
+        });
+        editor.addEventListener('blur', () => {
+            if (!editor.innerHTML.replace(/<br\s*\/?>/gi, '').trim()) {
+                editor.innerHTML = placeholder;
+                editor.style.color = '#94a3b8';
+            }
+        });
+    } else {
+        editor.innerHTML = convertMarkdownToHtml(initialValue || '');
+    }
+
+    // Safe prototype descriptor helper
+    function getProtoPropertyDescriptor(obj, prop) {
+        let desc;
+        while (obj) {
+            desc = Object.getOwnPropertyDescriptor(obj, prop);
+            if (desc) return desc;
+            obj = Object.getPrototypeOf(obj);
+        }
+        return null;
+    }
+    const originalValueProp = getProtoPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+
+    if (originalValueProp && originalValueProp.set) {
+        Object.defineProperty(hiddenTextarea, 'value', {
+            get() {
+                return originalValueProp.get.call(hiddenTextarea);
+            },
+            set(val) {
+                originalValueProp.set.call(hiddenTextarea, val);
+                if (val) {
+                    editor.innerHTML = convertMarkdownToHtml(val);
+                    editor.style.color = 'var(--gray-900)';
+                } else {
+                    editor.innerHTML = placeholder || '';
+                    editor.style.color = placeholder ? '#94a3b8' : 'var(--gray-900)';
+                }
+            }
+        });
+    } else {
+        Object.defineProperty(hiddenTextarea, 'value', {
+            get() {
+                return hiddenTextarea.getAttribute('value') || '';
+            },
+            set(val) {
+                hiddenTextarea.setAttribute('value', val);
+                if (val) {
+                    editor.innerHTML = convertMarkdownToHtml(val);
+                    editor.style.color = 'var(--gray-900)';
+                } else {
+                    editor.innerHTML = placeholder || '';
+                    editor.style.color = placeholder ? '#94a3b8' : 'var(--gray-900)';
+                }
+            }
+        });
+    }
+
+    const syncValue = () => {
+        const markdown = convertHtmlToMarkdown(editor.innerHTML);
+        if (originalValueProp && originalValueProp.set) {
+            originalValueProp.set.call(hiddenTextarea, markdown);
+        } else {
+            hiddenTextarea.value = markdown;
+        }
+    };
+
+    editor.addEventListener('input', syncValue);
+
+    editor.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
+            e.preventDefault();
+            document.execCommand('underline', false, null);
+            syncValue();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            document.execCommand('bold', false, null);
+            syncValue();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+            e.preventDefault();
+            document.execCommand('italic', false, null);
+            syncValue();
+        }
+    });
+
+    // B/I click formatting
+    boldBtn.onclick = () => {
+        editor.focus();
+        document.execCommand('bold', false, null);
+        syncValue();
+    };
+    italicBtn.onclick = () => {
+        editor.focus();
+        document.execCommand('italic', false, null);
+        syncValue();
+    };
+    underlineBtn.onclick = () => {
+        editor.focus();
+        document.execCommand('underline', false, null);
+        syncValue();
+    };
+    linkBtn.onclick = () => {
+        editor.focus();
+
+        // Save current text selection range
+        const selection = window.getSelection();
+        let savedRange = null;
+        if (selection.rangeCount > 0) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+        }
+
+        window.customLinkPrompt('Enter link URL:', 'https://example.com', (url) => {
+            // Restore selection range
+            if (savedRange) {
+                selection.removeAllRanges();
+                selection.addRange(savedRange);
+            }
+
+            document.execCommand('createLink', false, url);
+            // Style links cleanly
+            const links = editor.getElementsByTagName('a');
+            for (let link of links) {
+                link.target = '_blank';
+                link.style.color = 'var(--green-600)';
+                link.style.textDecoration = 'underline';
+            }
+            syncValue();
+        }, () => {
+            // Restore selection range
+            if (savedRange) {
+                selection.removeAllRanges();
+                selection.addRange(savedRange);
+            }
+            document.execCommand('unlink', false, null);
+            syncValue();
+        });
+    };
+    fontSelect.onchange = () => {
+        editor.focus();
+        const selectedFont = fontSelect.value;
+        if (selectedFont) {
+            document.execCommand('fontName', false, selectedFont);
+        } else {
+            document.execCommand('removeFormat', false, null);
+        }
+        syncValue();
+    };
+
+    // Set initial value
+    hiddenTextarea.value = initialValue || '';
+
+    // Append elements
+    container.appendChild(hiddenTextarea);
+    container.appendChild(toolbar);
+    container.appendChild(editor);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     initGlobal();
     initApp();
@@ -30,6 +575,21 @@ function initGlobal() {
         }
     });
 
+    // Global shortcut delegation for comment & reply inputs
+    document.addEventListener('keydown', (e) => {
+        const target = e.target;
+        if (target && target.id && (target.id.startsWith('comment-input-') || target.id.startsWith('reply-input-'))) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                window.formatTextarea(target, 'bold');
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+                e.preventDefault();
+                window.formatTextarea(target, 'italic');
+            }
+        }
+    });
+
     isGlobalInitDone = true;
 }
 
@@ -39,6 +599,14 @@ function initApp() {
     initHistory();
     initQR();
     initAuthForms();
+
+    // Show refresh update toast on dashboard or admin panel pages
+    const path = window.location.pathname;
+    if (path === '/dashboard' || path === '/admin') {
+        setTimeout(() => {
+            showToast("Click Refresh Button !", "info-no-icon", 5000);
+        }, 500);
+    }
 }
 
 /* ===== SPA NAVIGATION (Next.js Style) ===== */
@@ -208,9 +776,11 @@ function showToast(message, type = 'success', duration = 4000) {
     const icons = {
         success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
         error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+        info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+        'info-no-icon': ''
     };
-    toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+    const iconHtml = icons[type] !== undefined ? icons[type] : icons.info;
+    toast.innerHTML = `${iconHtml}<span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -245,7 +815,7 @@ function initNavbar() {
                 toggle.classList.remove('active');
             }
         });
-        
+
         // Auto-close menu when an option is selected on mobile
         const navItems = links.querySelectorAll('.nav-link, .nav-dropdown-item');
         navItems.forEach(item => {
@@ -546,12 +1116,12 @@ function updateOverallProgress() {
     const activeOrFinished = globalUploads.filter(u => u.status !== 'cancelled');
     const total = activeOrFinished.reduce((sum, u) => sum + u.totalBytes, 0);
     const loaded = activeOrFinished.reduce((sum, u) => sum + u.loadedBytes, 0);
-    
+
     const overallPct = total > 0 ? Math.min(Math.round((loaded / total) * 100), 100) : 0;
-    
+
     if (progressBar) progressBar.style.width = overallPct + '%';
     if (progressText) progressText.textContent = overallPct + '%';
-    
+
     const activeCount = globalUploads.filter(u => u.status === 'uploading').length;
     const pendingCount = globalUploads.filter(u => u.status === 'pending').length;
     isUploading = activeCount > 0 || pendingCount > 0;
@@ -560,7 +1130,7 @@ function updateOverallProgress() {
     if (globalUploads.length > 0) {
         const widget = ensurePersistentWidget();
         widget.classList.add('active');
-        
+
         const wPct = widget.querySelector('#widget-progress-pct');
         const wBar = widget.querySelector('#widget-progress-bar');
         const wTitle = widget.querySelector('#widget-title-text');
@@ -576,7 +1146,7 @@ function updateOverallProgress() {
             const hasFailed = globalUploads.some(u => u.status === 'failed');
             if (wTitle) wTitle.textContent = hasFailed ? 'Upload Finished (with errors)' : 'All Uploads Complete';
             if (wClose) wClose.style.display = 'flex';
-            
+
             // Auto-hide persistent widget after 8 seconds of idle complete (only if not minimized or errors exist)
             if (!hasFailed && !widget.classList.contains('minimized')) {
                 if (widget.hideTimeout) clearTimeout(widget.hideTimeout);
@@ -599,7 +1169,7 @@ function updateOverallProgress() {
             progressHeader.textContent = `Uploading ${activeCount + pendingCount} file(s)...`;
         } else {
             progressHeader.textContent = 'Upload Complete';
-            
+
             // Auto hide inline progress panel after 4 seconds of idle
             setTimeout(() => {
                 const currentActive = globalUploads.filter(u => u.status === 'uploading').length;
@@ -621,7 +1191,7 @@ function processQueue(folderId) {
         updateOverallProgress();
         return;
     }
-    
+
     while (activeUploadCount < MAX_CONCURRENT_UPLOADS && pendingTasks.length > 0) {
         const task = pendingTasks.shift();
         task.status = 'uploading';
@@ -637,14 +1207,14 @@ function uploadFileInChunks(file, uploadTask, folderId) {
     const fileUuid = 'ff-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
     let chunkIndex = 0;
     const startTime = Date.now();
-    
+
     function uploadNextChunk() {
         if (uploadTask.aborted) return;
-        
+
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(file.size, start + CHUNK_SIZE);
         const chunk = file.slice(start, end);
-        
+
         const formData = new FormData();
         formData.append('folder_id', folderId);
         formData.append('csrf_token', getCSRF());
@@ -654,22 +1224,22 @@ function uploadFileInChunks(file, uploadTask, folderId) {
         formData.append('file_uuid', fileUuid);
         formData.append('file_name', file.name);
         formData.append('file_size', file.size);
-        
+
         const _csrf = document.getElementById('csrf-token');
         const token = _csrf ? _csrf.value : (typeof CSRF_TOKEN !== 'undefined' ? CSRF_TOKEN : '');
         formData.append('csrf_token', token);
-        
+
         const xhr = new XMLHttpRequest();
         uploadTask.xhr = xhr;
-        
+
         xhr.open('POST', '/api/upload');
-        
+
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable && !uploadTask.aborted) {
                 const chunkLoaded = e.loaded;
                 uploadTask.loadedBytes = start + chunkLoaded;
                 updateOverallProgress();
-                
+
                 // Calculate speed and ETA
                 const pct = Math.round((uploadTask.loadedBytes / file.size) * 100);
                 const timeElapsed = (Date.now() - startTime) / 1000;
@@ -677,7 +1247,7 @@ function uploadFileInChunks(file, uploadTask, folderId) {
                     const speedBps = uploadTask.loadedBytes / timeElapsed;
                     const bytesRemaining = file.size - uploadTask.loadedBytes;
                     const timeRemainingSec = Math.max(0, bytesRemaining / speedBps);
-                    
+
                     let timeStr = "";
                     if (timeRemainingSec >= 3600) {
                         timeStr = Math.floor(timeRemainingSec / 3600) + "h " + Math.floor((timeRemainingSec % 3600) / 60) + "m";
@@ -696,15 +1266,15 @@ function uploadFileInChunks(file, uploadTask, folderId) {
                 }
             }
         });
-        
+
         xhr.addEventListener('load', () => {
             if (uploadTask.aborted) return;
-            
+
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const data = JSON.parse(xhr.responseText);
                     if (data.csrf_token) updateCSRF(data.csrf_token);
-                    
+
                     if (data.success) {
                         if (data.chunk_uploaded) {
                             chunkIndex++;
@@ -723,13 +1293,13 @@ function uploadFileInChunks(file, uploadTask, folderId) {
                                 uploadTask.widgetCancelBtn.style.display = 'none';
                             }
                             addFileCard(data.results[0].file);
-                            
+
                             // Update count on page
                             const countEl = document.getElementById('file-count');
                             if (countEl) countEl.textContent = parseInt(countEl.textContent) + 1;
                             const empty = document.getElementById('files-empty');
                             if (empty) empty.remove();
-                            
+
                             activeUploadCount--;
                             processQueue(folderId);
                         } else {
@@ -745,12 +1315,12 @@ function uploadFileInChunks(file, uploadTask, folderId) {
                 handleUploadError(`Server returned status ${xhr.status}`);
             }
         });
-        
+
         xhr.addEventListener('error', () => {
             if (uploadTask.aborted) return;
             handleUploadError('Network error.');
         });
-        
+
         xhr.addEventListener('abort', () => {
             uploadTask.status = 'cancelled';
             if (uploadTask.domElement) {
@@ -766,10 +1336,10 @@ function uploadFileInChunks(file, uploadTask, folderId) {
             activeUploadCount--;
             processQueue(folderId);
         });
-        
+
         xhr.send(formData);
     }
-    
+
     function handleUploadError(errMsg) {
         uploadTask.status = 'failed';
         if (uploadTask.domElement) {
@@ -786,7 +1356,7 @@ function uploadFileInChunks(file, uploadTask, folderId) {
         activeUploadCount--;
         processQueue(folderId);
     }
-    
+
     uploadNextChunk();
 }
 
@@ -826,7 +1396,7 @@ async function handleFiles(files) {
 
     for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i];
-        
+
         let item = null;
         let cancelBtn = null;
         if (fileList) {

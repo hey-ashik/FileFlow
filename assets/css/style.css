@@ -375,7 +375,12 @@ h4 {
     font-weight: 500;
     font-size: .9rem;
     color: var(--gray-600);
-    transition: var(--transition)
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.nav-link svg {
+    flex-shrink: 0;
 }
 
 .nav-link:hover {
@@ -1757,7 +1762,8 @@ h4 {
     border-left-color: #ef4444
 }
 
-.toast.info {
+.toast.info,
+.toast.info-no-icon {
     border-left-color: #3b82f6
 }
 
@@ -2500,7 +2506,7 @@ h4 {
 }
 
 /* ===== RESPONSIVE ===== */
-@media(max-width:1024px) {
+@media(max-width:1200px) {
     .features-grid {
         grid-template-columns: repeat(2, 1fr)
     }
@@ -2524,7 +2530,7 @@ h4 {
     }
 }
 
-@media(max-width:1024px) {
+@media(max-width:1200px) {
     .navbar-inner {
         padding: 0 16px
     }
@@ -2785,7 +2791,7 @@ h4 {
 }
 
 /* ===== DESKTOP NAVIGATION (Laptop/Large Screens) ===== */
-@media(min-width: 1025px) {
+@media(min-width: 1201px) {
     .navbar-inner {
         padding: 0 24px;
         display: flex !important;
@@ -3274,4 +3280,23 @@ h4 {
         left: auto;
         right: 12px;
     }
+}
+
+/* ===== CUSTOM PREMIUM SELECT DROPDOWN ===== */
+.custom-select-arrow {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background: white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") no-repeat right 1rem center !important;
+    background-size: 10px !important;
+    padding-right: 2.2rem !important;
+}
+
+.font-select-arrow {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background: white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") no-repeat right 0.5rem center !important;
+    background-size: 8px !important;
+    padding-right: 1.5rem !important;
 }
