@@ -198,7 +198,7 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                         <?php endif; ?>
                                     </div>
                                     <div>
-                                        <div class="nav-dropdown-name"><?php echo htmlspecialchars($currentUser['name']); ?>
+                                        <div class="nav-dropdown-name" style="display: flex; align-items: center; gap: 4px;"><?php echo htmlspecialchars($currentUser['name']) . getVerifiedBadgeHtml($currentUser['is_verified'] ?? 0, $currentUser['is_admin'] ?? 0); ?>
                                         </div>
                                         <div class="nav-dropdown-email">
                                             <?php echo htmlspecialchars($currentUser['email']); ?>
@@ -207,24 +207,13 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                 </div>
                                 <div class="nav-dropdown-divider"></div>
 
-                                <?php if (isset($currentUser['is_admin']) && $currentUser['is_admin']): ?>
-                                    <a href="/admin" class="nav-dropdown-item">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2">
-                                            <path d="M12 2l9 4.9V12c0 5.5-4 10.7-9 12-5-1.3-9-6.5-9-12V6.9L12 2z" />
-                                        </svg>
-                                        Admin Panel
-                                    </a>
-                                <?php endif; ?>
-                                <a href="/dashboard" class="nav-dropdown-item">
+                                <a href="/verify-badge" class="nav-dropdown-item" data-no-spa="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
-                                        <rect x="3" y="3" width="7" height="7" />
-                                        <rect x="14" y="3" width="7" height="7" />
-                                        <rect x="14" y="14" width="7" height="7" />
-                                        <rect x="3" y="14" width="7" height="7" />
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                     </svg>
-                                    Dashboard
+                                    Verify Badge
                                 </a>
                                 <a href="/profile" class="nav-dropdown-item" data-no-spa="true">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

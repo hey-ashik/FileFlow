@@ -13,7 +13,7 @@ $db = getDB();
 $currentUserId = isLoggedIn() ? $_SESSION['user_id'] : null;
 
 // Fetch the thought
-$stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug,
+$stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug, (u.is_verified OR u.is_admin) as is_verified,
     (SELECT COUNT(*) FROM thought_likes WHERE thought_id = t.id) as likes_count,
     (SELECT COUNT(*) FROM thought_comments WHERE thought_id = t.id) as comments_count,
     (SELECT COUNT(*) FROM thought_shares WHERE thought_id = t.id) as shares_count
@@ -304,7 +304,7 @@ window.editThought = function(thoughtId) {
     cancelBtn.style.borderRadius = '6px';
     cancelBtn.style.cursor = 'pointer';
     
-    saveBtn.onclick = async () => {
+    saveBtn.onclick = () => {
         const newContent = textarea.value.trim();
         const newLink = linkInput.value.trim();
         if (!newContent && !newLink && (!hasMedia || (removeMediaCheckbox && removeMediaCheckbox.checked)) && fileInput.files.length === 0) {
@@ -312,37 +312,28 @@ window.editThought = function(thoughtId) {
             return;
         }
         
-        try {
-            saveBtn.textContent = 'Saving...';
-            saveBtn.disabled = true;
-            const formData = new FormData();
-            formData.append('action', 'edit_thought');
-            formData.append('thought_id', thoughtId);
-            formData.append('content', newContent);
-            formData.append('link', newLink);
-            formData.append('privacy', privacySelect.value);
-            if (removeMediaCheckbox && removeMediaCheckbox.checked) {
-                formData.append('remove_media', '1');
-            }
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('media[]', fileInput.files[i]);
-            }
-            
-            const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
-            const data = await res.json();
-            
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert(data.message || 'Error editing post.');
-                saveBtn.textContent = 'Save';
-                saveBtn.disabled = false;
-            }
-        } catch (err) {
-            alert('Failed to edit post.');
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+        const formData = new FormData();
+        formData.append('action', 'edit_thought');
+        formData.append('thought_id', thoughtId);
+        formData.append('content', newContent);
+        formData.append('link', newLink);
+        formData.append('privacy', privacySelect.value);
+        if (removeMediaCheckbox && removeMediaCheckbox.checked) {
+            formData.append('remove_media', '1');
+        }
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('media[]', fileInput.files[i]);
+        }
+        
+        window.saveThoughtWithProgress(saveBtn, thoughtId, formData, (data) => {
+            window.location.reload();
+        }, (errMsg) => {
+            alert(errMsg);
             saveBtn.textContent = 'Save';
             saveBtn.disabled = false;
-        }
+        });
     };
     
     cancelBtn.onclick = () => {

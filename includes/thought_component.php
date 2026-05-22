@@ -107,7 +107,7 @@ function renderThoughtCard($thought, $currentUserId = null, $isSinglePage = fals
     echo '<div style="display: flex; align-items: center; gap: 1rem;">';
     echo '<a href="/u/' . htmlspecialchars($thought['profile_slug']) . '" data-no-spa="true" style="display: block; width: 48px; height: 48px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; text-decoration:none; outline:none; ' . $avatarStyle . '">' . $avatar . '</a>';
     echo '<div>';
-    echo '<a href="/u/' . htmlspecialchars($thought['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 1.05rem;">' . htmlspecialchars($thought['full_name']) . '</a>';
+    echo '<a href="/u/' . htmlspecialchars($thought['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 1.05rem; display: inline-flex; align-items: center; gap: 0.25rem;">' . htmlspecialchars($thought['full_name']) . getVerifiedBadgeHtml($thought['is_verified'] ?? 0) . '</a>';
     echo '<a href="/p/' . $thoughtId . '" data-no-spa="true" style="font-size: 0.8rem; color: var(--gray-500); text-decoration: none; display: flex; align-items: center;">' . timeAgo($thought['created_at']) . $privacyIcon . '</a>';
     echo '</div>';
     echo '</div>';

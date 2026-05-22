@@ -600,9 +600,9 @@ function initApp() {
     initQR();
     initAuthForms();
 
-    // Show refresh update toast on dashboard or admin panel pages
+    // Show refresh update toast on dashboard page
     const path = window.location.pathname;
-    if (path === '/dashboard' || path === '/admin') {
+    if (path === '/dashboard') {
         setTimeout(() => {
             showToast("Click Refresh Button !", "info-no-icon", 5000);
         }, 500);
@@ -1826,3 +1826,136 @@ function updateCSRF(token) {
     const el = document.getElementById('csrf-token');
     if (el && token) el.value = token;
 }
+
+window.saveThoughtWithProgress = function(saveBtn, thoughtId, formData, successCallback, errorCallback) {
+    const files = [];
+    if (formData.getAll) {
+        const mediaEntries = formData.getAll('media[]');
+        for (let file of mediaEntries) {
+            if (file instanceof File) {
+                files.push(file);
+            }
+        }
+    }
+
+    const widget = window.ensurePersistentWidget ? window.ensurePersistentWidget() : null;
+    if (widget) {
+        widget.classList.add('active');
+        widget.classList.remove('minimized');
+        const wTitle = widget.querySelector('#widget-title-text');
+        if (wTitle) wTitle.textContent = `Saving updates...`;
+        const wClose = widget.querySelector('#btn-close-widget');
+        if (wClose) wClose.style.display = 'none';
+        const wFileList = widget.querySelector('#widget-file-list');
+        if (wFileList) {
+            wFileList.innerHTML = '';
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    wFileList.innerHTML += `
+                        <div class="widget-file-item" id="thought-edit-upload-file-${i}" style="display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; display: block; font-weight: 500;">${files[i].name}</span>
+                                <span class="pct" style="font-weight: 600; color: var(--green-600);">Pending</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                wFileList.innerHTML = `
+                    <div class="widget-file-item" id="thought-edit-upload-text" style="display: flex; flex-direction: column; gap: 0.25rem; padding: 0.5rem; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; display: block; font-weight: 500;">Updating post content...</span>
+                            <span class="pct" style="font-weight: 600; color: var(--green-600);">Saving</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/thoughts', true);
+
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            if (widget) {
+                const wPct = widget.querySelector('#widget-progress-pct');
+                const wBar = widget.querySelector('#widget-progress-bar');
+                if (wPct) wPct.textContent = percentComplete + '%';
+                if (wBar) wBar.style.width = percentComplete + '%';
+                
+                if (files.length > 0) {
+                    for (let i = 0; i < files.length; i++) {
+                        const fileItem = widget.querySelector(`#thought-edit-upload-file-${i} .pct`);
+                        if (fileItem) {
+                            fileItem.textContent = percentComplete === 100 ? 'Finishing...' : `${percentComplete}%`;
+                        }
+                    }
+                } else {
+                    const textItem = widget.querySelector(`#thought-edit-upload-text .pct`);
+                    if (textItem) {
+                        textItem.textContent = percentComplete === 100 ? 'Finishing...' : `${percentComplete}%`;
+                    }
+                }
+            }
+        }
+    });
+
+    xhr.addEventListener('load', () => {
+        let data = {};
+        try {
+            data = JSON.parse(xhr.responseText);
+        } catch (err) {}
+
+        if (xhr.status === 200 && data.success) {
+            if (widget) {
+                const wTitle = widget.querySelector('#widget-title-text');
+                if (wTitle) wTitle.textContent = 'Save Complete';
+                const wPct = widget.querySelector('#widget-progress-pct');
+                const wBar = widget.querySelector('#widget-progress-bar');
+                if (wPct) wPct.textContent = '100%';
+                if (wBar) wBar.style.width = '100%';
+                const wClose = widget.querySelector('#btn-close-widget');
+                if (wClose) wClose.style.display = 'flex';
+                
+                if (files.length > 0) {
+                    for (let i = 0; i < files.length; i++) {
+                        const fileItem = widget.querySelector(`#thought-edit-upload-file-${i} .pct`);
+                        if (fileItem) {
+                            fileItem.textContent = 'Uploaded';
+                            fileItem.style.color = 'var(--green-600)';
+                        }
+                    }
+                } else {
+                    const textItem = widget.querySelector(`#thought-edit-upload-text .pct`);
+                    if (textItem) {
+                        textItem.textContent = 'Saved';
+                        textItem.style.color = 'var(--green-600)';
+                    }
+                }
+                
+                setTimeout(() => {
+                    widget.classList.remove('active');
+                    const wFileList = widget.querySelector('#widget-file-list');
+                    if (wFileList) wFileList.innerHTML = '';
+                }, 4000);
+            }
+            successCallback(data);
+        } else {
+            if (widget) {
+                widget.classList.remove('active');
+            }
+            errorCallback(data.message || 'Error editing post.');
+        }
+    });
+
+    xhr.addEventListener('error', () => {
+        if (widget) {
+            widget.classList.remove('active');
+        }
+        errorCallback('Failed to edit post.');
+    });
+
+    xhr.send(formData);
+};

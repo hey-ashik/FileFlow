@@ -65,7 +65,7 @@ if ($action === 'get_user_thoughts') {
     
     $thoughts = $cache->get($cacheKey);
     if ($thoughts === null) {
-        $stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug,
+        $stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug, (u.is_verified OR u.is_admin) as is_verified,
             (SELECT COUNT(*) FROM thought_likes WHERE thought_id = t.id) as likes_count,
             (SELECT COUNT(*) FROM thought_comments WHERE thought_id = t.id) as comments_count,
             (SELECT COUNT(*) FROM thought_shares WHERE thought_id = t.id) as shares_count
@@ -114,7 +114,7 @@ if ($action === 'get_feed_thoughts') {
     
     $thoughts = $cache->get($cacheKey);
     if ($thoughts === null) {
-        $stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug,
+        $stmt = $db->prepare("SELECT t.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug, (u.is_verified OR u.is_admin) as is_verified,
             (SELECT COUNT(*) FROM thought_likes WHERE thought_id = t.id) as likes_count,
             (SELECT COUNT(*) FROM thought_comments WHERE thought_id = t.id) as comments_count,
             (SELECT COUNT(*) FROM thought_shares WHERE thought_id = t.id) as shares_count
@@ -392,7 +392,7 @@ if ($action === 'edit_thought') {
 if ($action === 'get_comments') {
     $thoughtId = (int)($_GET['thought_id'] ?? 0);
     
-    $stmt = $db->prepare("SELECT c.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug 
+    $stmt = $db->prepare("SELECT c.*, u.full_name, u.avatar_path, u.avatar_color, u.profile_slug, (u.is_verified OR u.is_admin) as is_verified 
         FROM thought_comments c 
         JOIN users u ON c.user_id = u.id 
         WHERE c.thought_id = ? 
@@ -426,7 +426,7 @@ if ($action === 'get_comments') {
             echo '<div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; ' . $marginLeft . '">';
             echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="display: block; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color:white; font-size:0.8rem; font-weight:bold; text-decoration:none; outline:none; ' . $avatarStyle . '">' . $avatar . '</a>';
             echo '<div style="background: #f1f5f9; border-radius: 12px; padding: 0.75rem 1rem; flex: 1; position: relative;">';
-            echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 0.9rem; margin-right: 0.5rem; outline:none;">' . htmlspecialchars($comment['full_name']) . '</a>';
+            echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 0.9rem; margin-right: 0.5rem; outline:none; display: inline-flex; align-items: center; gap: 0.25rem;">' . htmlspecialchars($comment['full_name']) . getVerifiedBadgeHtml($comment['is_verified'] ?? 0) . '</a>';
             echo '<span style="font-size: 0.75rem; color: var(--gray-500);">' . timeAgo($comment['created_at']) . '</span>';
             
             $canEditComment = $currentUserId && ($comment['user_id'] == $currentUserId);

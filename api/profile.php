@@ -337,4 +337,86 @@ if ($action === 'check_slug') {
     exit;
 }
 
+if ($action === 'apply_verification') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['success' => false, 'message' => 'Invalid security token']);
+        exit;
+    }
+
+    $realName = trim($_POST['real_name'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+
+    if (empty($realName) || empty($phone) || empty($email)) {
+        echo json_encode(['success' => false, 'message' => 'Please fill in all details.']);
+        exit;
+    }
+
+    // Check if user is already verified
+    $stmt = $db->prepare("SELECT is_verified, profile_visits FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $userRow = $stmt->fetch();
+    if ($userRow && $userRow['is_verified']) {
+        echo json_encode(['success' => false, 'message' => 'You are already verified.']);
+        exit;
+    }
+
+    // Check pending request
+    $stmtPending = $db->prepare("SELECT id FROM verification_requests WHERE user_id = ? AND status = 'pending'");
+    $stmtPending->execute([$userId]);
+    if ($stmtPending->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'You already have a pending verification request.']);
+        exit;
+    }
+
+    // Verify criteria
+    $profileVisits = $userRow ? (int)$userRow['profile_visits'] : 0;
+    
+    $stmtViews = $db->prepare("SELECT COALESCE(SUM(views), 0) FROM thoughts WHERE user_id = ?");
+    $stmtViews->execute([$userId]);
+    $thoughtViews = (int)$stmtViews->fetchColumn();
+
+    if ($profileVisits < 500 || $thoughtViews < 1000) {
+        echo json_encode(['success' => false, 'message' => 'You do not meet the criteria to apply.']);
+        exit;
+    }
+
+    // Upload NID
+    if (!isset($_FILES['nid_file']) || $_FILES['nid_file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'Please upload a valid NID image/document.']);
+        exit;
+    }
+
+    $file = $_FILES['nid_file'];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
+
+    if (!in_array($mime, $allowedMimes)) {
+        echo json_encode(['success' => false, 'message' => 'Only JPG, PNG, GIF, WEBP, and PDF files are allowed for NID.']);
+        exit;
+    }
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'nid_' . $userId . '_' . time() . '.' . $ext;
+    $targetDir = __DIR__ . '/../uploads/nid/';
+
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+
+    $targetPath = $targetDir . $filename;
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        $publicPath = '/uploads/nid/' . $filename;
+        $stmtInsert = $db->prepare("INSERT INTO verification_requests (user_id, real_name, phone, email, nid_path, status) VALUES (?, ?, ?, ?, ?, 'pending')");
+        $stmtInsert->execute([$userId, $realName, $phone, $email, $publicPath]);
+
+        echo json_encode(['success' => true, 'message' => 'Verification request submitted successfully.']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to save NID document.']);
+    }
+    exit;
+}
+
 echo json_encode(['success' => false, 'message' => 'Invalid action']);

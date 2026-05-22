@@ -135,6 +135,27 @@ try {
         echo "Created thought_shares table.\n";
     } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
 
+    try {
+        $db->exec("ALTER TABLE users ADD COLUMN is_verified TINYINT(1) NOT NULL DEFAULT 0;");
+        echo "Added is_verified column to users table.\n";
+    } catch (PDOException $e) { /* Ignore if exists */ }
+
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `verification_requests` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT UNSIGNED NOT NULL,
+            `real_name` VARCHAR(255) NOT NULL,
+            `phone` VARCHAR(50) NOT NULL,
+            `email` VARCHAR(255) NOT NULL,
+            `nid_path` VARCHAR(255) NOT NULL,
+            `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        echo "Created verification_requests table.\n";
+    } catch (PDOException $e) { echo $e->getMessage() . "\n"; }
+
     // Check if admin user exists
     $email = 'ashikulislam2070@gmail.com';
     $password = 'Ashik@21032001';

@@ -7,18 +7,24 @@ if (!function_exists('incrementProfileVisits')) {
 $db = getDB();
 
 try {
-    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits, is_public FROM users WHERE profile_slug = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits, is_public, is_verified, is_admin FROM users WHERE profile_slug = ? AND is_active = 1");
     $stmt->execute([$profileSlug]);
     $userProfile = $stmt->fetch();
 } catch (PDOException $e) {
     // Fallback if profile_visits or is_public column doesn't exist yet
-    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color FROM users WHERE profile_slug = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, is_verified, is_admin FROM users WHERE profile_slug = ? AND is_active = 1");
     $stmt->execute([$profileSlug]);
     $userProfile = $stmt->fetch();
     if ($userProfile) {
         $userProfile['profile_visits'] = 0;
         $userProfile['is_public'] = 0;
     }
+}
+if ($userProfile && !isset($userProfile['is_verified'])) {
+    $userProfile['is_verified'] = 0;
+}
+if ($userProfile && !isset($userProfile['is_admin'])) {
+    $userProfile['is_admin'] = 0;
 }
 
 if (!$userProfile) {
@@ -405,7 +411,7 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                 </div>
             </div>
             <div class="card-body">
-                <h1 class="name"><?php echo htmlspecialchars($userProfile['full_name']); ?></h1>
+                <h1 class="name" style="display:inline-flex; align-items:center; gap:0.35rem; justify-content:center; width:100%;"><?php echo htmlspecialchars($userProfile['full_name']); ?><?php echo getVerifiedBadgeHtml($userProfile['is_verified'] ?? 0, $userProfile['is_admin'] ?? 0); ?></h1>
                 <div style="font-size: 0.9rem; color: #94a3b8; font-weight: 500;">
                     @<?php echo htmlspecialchars($profileSlug); ?></div>
 
@@ -927,7 +933,7 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
             cancelBtn.style.borderRadius = '6px';
             cancelBtn.style.cursor = 'pointer';
             
-            saveBtn.onclick = async () => {
+            saveBtn.onclick = () => {
                 const newContent = textarea.value.trim();
                 const newLink = linkInput.value.trim();
                 if (!newContent && !newLink && (!hasMedia || (removeMediaCheckbox && removeMediaCheckbox.checked)) && fileInput.files.length === 0) {
@@ -935,38 +941,29 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                     return;
                 }
                 
-                try {
-                    saveBtn.textContent = 'Saving...';
-                    saveBtn.disabled = true;
-                    const formData = new FormData();
-                    formData.append('action', 'edit_thought');
-                    formData.append('thought_id', thoughtId);
-                    formData.append('content', newContent);
-                    formData.append('link', newLink);
-                    formData.append('privacy', privacySelect.value);
-                    if (removeMediaCheckbox && removeMediaCheckbox.checked) {
-                        formData.append('remove_media', '1');
-                    }
-                    for (let i = 0; i < fileInput.files.length; i++) {
-                        formData.append('media[]', fileInput.files[i]);
-                    }
-                    
-                    const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
-                    const data = await res.json();
-                    
-                    if (data.success) {
-                        thoughtsLoaded = false;
-                        if (typeof window.loadUserThoughts === 'function') window.loadUserThoughts();
-                    } else {
-                        alert(data.message || 'Error editing post.');
-                        saveBtn.textContent = 'Save';
-                        saveBtn.disabled = false;
-                    }
-                } catch (err) {
-                    alert('Failed to edit post.');
+                saveBtn.textContent = 'Saving...';
+                saveBtn.disabled = true;
+                const formData = new FormData();
+                formData.append('action', 'edit_thought');
+                formData.append('thought_id', thoughtId);
+                formData.append('content', newContent);
+                formData.append('link', newLink);
+                formData.append('privacy', privacySelect.value);
+                if (removeMediaCheckbox && removeMediaCheckbox.checked) {
+                    formData.append('remove_media', '1');
+                }
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    formData.append('media[]', fileInput.files[i]);
+                }
+                
+                window.saveThoughtWithProgress(saveBtn, thoughtId, formData, (data) => {
+                    thoughtsLoaded = false;
+                    if (typeof window.loadUserThoughts === 'function') window.loadUserThoughts();
+                }, (errMsg) => {
+                    alert(errMsg);
                     saveBtn.textContent = 'Save';
                     saveBtn.disabled = false;
-                }
+                });
             };
             
             cancelBtn.onclick = () => {

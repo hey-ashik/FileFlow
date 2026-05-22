@@ -687,7 +687,7 @@ $isLoggedInUser = isLoggedIn();
         cancelBtn.style.borderRadius = '6px';
         cancelBtn.style.cursor = 'pointer';
 
-        saveBtn.onclick = async () => {
+        saveBtn.onclick = () => {
             const newContent = textarea.value.trim();
             const newLink = linkInput.value.trim();
             if (!newContent && !newLink && (!hasMedia || (removeMediaCheckbox && removeMediaCheckbox.checked)) && fileInput.files.length === 0) {
@@ -695,43 +695,34 @@ $isLoggedInUser = isLoggedIn();
                 return;
             }
 
-            try {
-                saveBtn.textContent = 'Saving...';
-                saveBtn.disabled = true;
-                const formData = new FormData();
-                formData.append('action', 'edit_thought');
-                formData.append('thought_id', thoughtId);
-                formData.append('content', newContent);
-                formData.append('link', newLink);
-                formData.append('privacy', privacySelect.value);
-                if (removeMediaCheckbox && removeMediaCheckbox.checked) {
-                    formData.append('remove_media', '1');
-                }
-                for (let i = 0; i < fileInput.files.length; i++) {
-                    if (fileInput.files[i].size > 10 * 1024 * 1024) {
-                        alert('Each file must be 10MB or less.');
-                        saveBtn.textContent = 'Save';
-                        saveBtn.disabled = false;
-                        return;
-                    }
-                    formData.append('media[]', fileInput.files[i]);
-                }
-
-                const res = await fetch('/api/thoughts', { method: 'POST', body: formData });
-                const data = await res.json();
-
-                if (data.success) {
-                    if (typeof window.loadFeedThoughts === 'function') window.loadFeedThoughts();
-                } else {
-                    alert(data.message || 'Error editing post.');
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+            const formData = new FormData();
+            formData.append('action', 'edit_thought');
+            formData.append('thought_id', thoughtId);
+            formData.append('content', newContent);
+            formData.append('link', newLink);
+            formData.append('privacy', privacySelect.value);
+            if (removeMediaCheckbox && removeMediaCheckbox.checked) {
+                formData.append('remove_media', '1');
+            }
+            for (let i = 0; i < fileInput.files.length; i++) {
+                if (fileInput.files[i].size > 10 * 1024 * 1024) {
+                    alert('Each file must be 10MB or less.');
                     saveBtn.textContent = 'Save';
                     saveBtn.disabled = false;
+                    return;
                 }
-            } catch (err) {
-                alert('Failed to edit post.');
+                formData.append('media[]', fileInput.files[i]);
+            }
+
+            window.saveThoughtWithProgress(saveBtn, thoughtId, formData, (data) => {
+                if (typeof window.loadFeedThoughts === 'function') window.loadFeedThoughts();
+            }, (errMsg) => {
+                alert(errMsg);
                 saveBtn.textContent = 'Save';
                 saveBtn.disabled = false;
-            }
+            });
         };
 
         cancelBtn.onclick = () => {

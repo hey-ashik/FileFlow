@@ -147,6 +147,29 @@ function setupAdminAndSchema(): void {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         }
 
+        try {
+            $db->query("SELECT is_verified FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("ALTER TABLE users ADD COLUMN is_verified TINYINT(1) NOT NULL DEFAULT 0;");
+        }
+
+        try {
+            $db->query("SELECT id FROM verification_requests LIMIT 1");
+        } catch (PDOException $e) {
+            $db->exec("CREATE TABLE IF NOT EXISTS `verification_requests` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT UNSIGNED NOT NULL,
+                `real_name` VARCHAR(255) NOT NULL,
+                `phone` VARCHAR(50) NOT NULL,
+                `email` VARCHAR(255) NOT NULL,
+                `nid_path` VARCHAR(255) NOT NULL,
+                `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        }
+
         // Mark setup as complete to improve performance on next loads
         $email = 'ashikulislam2070@gmail.com';
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
@@ -170,6 +193,11 @@ function setupAdminAndSchema(): void {
     } catch (PDOException $e) {
         error_log("Setup error: " . $e->getMessage());
     }
+}
+
+function getVerifiedBadgeHtml($isVerified, $isAdmin = 0): string {
+    if (!$isVerified && !$isAdmin) return '';
+    return '<svg class="verified-badge" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle; margin-left:4px; flex-shrink:0;" title="Verified User"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.36.278C14.767 2.535 13.498 1.7 12 1.7c-1.498 0-2.767.835-3.41 2.088-.42-.178-.88-.278-1.36-.278-2.108 0-3.817 1.78-3.817 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.36-.278.643 1.253 1.712 2.088 3.41 2.088 1.498 0 2.767-.835 3.41-2.088.42.178.88.278 1.36.278 2.108 0 3.817-1.78 3.817-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.61 3.327l-3.33-3.42 1.428-1.465 1.902 1.954 4.887-5.023 1.428 1.465-6.315 6.49z" fill="#1d9bf0"/></svg>';
 }
 
 /**

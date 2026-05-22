@@ -9,6 +9,8 @@ $publicProfileUrl = null;
 if (!empty($user['profile_slug'])) {
     $publicProfileUrl = APP_URL . '/u/' . $user['profile_slug'];
 }
+
+
 ?>
 
 <div style="position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, var(--green-50) 0%, var(--white) 50%, var(--green-50) 100%); overflow: hidden; pointer-events: none;">
@@ -293,6 +295,9 @@ if (!empty($user['profile_slug'])) {
                         .live-url-text {
                             font-size: 0.95rem;
                         }
+                        .profile-card {
+                            padding: 1.25rem !important;
+                        }
                     }
                 </style>
                 <div
@@ -320,11 +325,12 @@ if (!empty($user['profile_slug'])) {
             <?php endif; ?>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 2rem;">
             <button type="submit" id="save-btn" class="btn btn-primary"
                 style="padding: 0.75rem 2rem; font-size: 1rem;">Save Profile Settings</button>
         </div>
     </form>
+
 </div>
 
 <script>
@@ -643,6 +649,8 @@ if (!empty($user['profile_slug'])) {
                 showToast('An error occurred during upload', 'error');
             }
         });
+
+
     })();
 
     async function removeAvatar() {

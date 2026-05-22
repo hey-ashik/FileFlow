@@ -36,7 +36,9 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN folder_limit INT NOT NULL DEFAULT 3");
     } catch (PDOException $e) {}
 
-    $db->prepare("UPDATE users SET space_limit_mb = ?, file_upload_limit_mb = ?, folder_limit = ? WHERE id = ?")->execute([$limit, $uploadLimit, $folderLimit, $userId]);
+    $isVerified = isset($_POST['is_verified']) && $_POST['is_verified'] === '1' ? 1 : 0;
+
+    $db->prepare("UPDATE users SET space_limit_mb = ?, file_upload_limit_mb = ?, folder_limit = ?, is_verified = ? WHERE id = ?")->execute([$limit, $uploadLimit, $folderLimit, $isVerified, $userId]);
     clearUserCache($userId);
     jsonResponse(['success' => true]);
 } catch (PDOException $e) {

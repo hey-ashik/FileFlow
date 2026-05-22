@@ -139,7 +139,8 @@ function getCurrentUser(): ?array {
         'profile_visits' => $user['profile_visits'] ?? 0,
         'is_public' => $user['is_public'] ?? 0,
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
-        'is_admin' => $_SESSION['is_admin'] ?? false
+        'is_admin' => $_SESSION['is_admin'] ?? false,
+        'is_verified' => (isset($user['is_admin']) && $user['is_admin'] == 1) ? 1 : ($user['is_verified'] ?? 0)
     ];
     
     $cache->set($cacheKey, $userData, 3600);

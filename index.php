@@ -126,6 +126,13 @@ switch (true) {
     case $path === '/thoughts':
         require __DIR__ . '/pages/thoughts.php';
         break;
+    case $path === '/verify-badge':
+        if (!isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
+        require __DIR__ . '/pages/verify-badge.php';
+        break;
     case $path === '/logout':
         logoutUser();
         header('Location: /');
@@ -205,6 +212,14 @@ switch (true) {
         
     case preg_match('#^/api/user/delete-folder$#', $path):
         require __DIR__ . '/api/user-delete-folder.php';
+        break;
+
+    case preg_match('#^/api/apply-verify$#', $path):
+        require __DIR__ . '/api/apply-verify.php';
+        break;
+        
+    case preg_match('#^/api/admin-verify-request$#', $path):
+        require __DIR__ . '/api/admin-verify-request.php';
         break;
 
     // Static assets
