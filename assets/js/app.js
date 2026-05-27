@@ -349,44 +349,101 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        html = html.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/gi, '<u>$1</u>');
-        html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>');
-        html = html.replace(/&lt;span\s+style=(?:&quot;|"|')font-family:\s*(.*?);?(?:&quot;|"|')&gt;(.*?)&lt;\/span&gt;/gi, '<span style="font-family: $1;">$2</span>');
+        html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*([\s\S]*?)\*/g, '<em>$1</em>');
+        html = html.replace(/&lt;u&gt;([\s\S]*?)&lt;\/u&gt;/gi, '<u>$1</u>');
+        html = html.replace(/\[([\s\S]*?)\]\(([\s\S]*?)\)/g, '<a href="$2" target="_blank" style="color: var(--green-600); text-decoration: underline;">$1</a>');
+        html = html.replace(/&lt;span\s+style=(?:&quot;|"|')font-family:\s*([\s\S]*?);?(?:&quot;|"|')&gt;([\s\S]*?)&lt;\/span&gt;/gi, '<span style="font-family: $1;">$2</span>');
         html = html.replace(/\n/g, '<br>');
         return html;
     }
 
     function convertHtmlToMarkdown(html) {
         if (!html || (placeholder && html === placeholder)) return '';
-        let md = html;
-
-        // 1. Convert supported structures to safe markers
-        md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
-        md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
-        md = md.replace(/<u[^>]*>(.*?)<\/u>/gi, '__U_START__$1__U_END__');
-        md = md.replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '__LINK_START_[$1]__$2__LINK_END__');
-        md = md.replace(/<font\s+face="([^"]+)"[^>]*>(.*?)<\/font>/gi, '__FONT_START_[$1]__$2__FONT_END__');
-        md = md.replace(/<span\s+style="font-family:\s*([^";]+);?"[^>]*>(.*?)<\/span>/gi, '__FONT_START_[$1]__$2__FONT_END__');
-
-        // Convert block tags and line breaks to plain newlines
-        md = md.replace(/<br\s*\/?>/gi, '\n');
-        md = md.replace(/<div[^>]*>(.*?)<\/div>/gi, '\n$1');
-        md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '\n$1');
-
-        // 2. Strip all remaining HTML tags
+        
         const temp = document.createElement('div');
-        temp.innerHTML = md;
-        let text = temp.textContent || temp.innerText || '';
-
-        // 3. Convert markers back to final markdown format
-        text = text.replace(/__U_START__(.*?)__U_END__/gi, '<u>$1</u>');
-        text = text.replace(/__LINK_START_\[(.*?)\]__(.*?)__LINK_END__/gi, '[$2]($1)');
-        text = text.replace(/__FONT_START_\[(.*?)\]__(.*?)__FONT_END__/gi, '<span style="font-family: $1;">$2</span>');
-
-        return text.trim();
+        temp.innerHTML = html;
+        
+        function nodeToMarkdown(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent;
+            }
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toLowerCase();
+                let childrenContent = '';
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    childrenContent += nodeToMarkdown(node.childNodes[i]);
+                }
+                
+                switch (tagName) {
+                    case 'br':
+                        return '\n';
+                    case 'strong':
+                    case 'b':
+                        if (!childrenContent.trim()) return childrenContent;
+                        return `**${childrenContent}**`;
+                    case 'em':
+                    case 'i':
+                        if (!childrenContent.trim()) return childrenContent;
+                        return `*${childrenContent}*`;
+                    case 'u':
+                        if (!childrenContent.trim()) return childrenContent;
+                        return `<u>${childrenContent}</u>`;
+                    case 'a':
+                        const href = node.getAttribute('href') || '';
+                        return `[${childrenContent}](${href})`;
+                    case 'span':
+                        const fontFamily = node.style.fontFamily || '';
+                        if (fontFamily) {
+                            return `<span style="font-family: ${fontFamily};">${childrenContent}</span>`;
+                        }
+                        return childrenContent;
+                    case 'font':
+                        const face = node.getAttribute('face') || '';
+                        if (face) {
+                            return `<span style="font-family: ${face};">${childrenContent}</span>`;
+                        }
+                        return childrenContent;
+                    case 'div':
+                    case 'p':
+                        const trimmed = childrenContent.trim();
+                        if (!trimmed) {
+                            return '\n';
+                        }
+                        return '\n' + childrenContent;
+                    default:
+                        return childrenContent;
+                }
+            }
+            return '';
+        }
+        
+        let result = '';
+        for (let i = 0; i < temp.childNodes.length; i++) {
+            result += nodeToMarkdown(temp.childNodes[i]);
+        }
+        
+        result = result.replace(/\u00a0/g, ' ');
+        return result.trim();
     }
+
+    const updateToolbar = () => {
+        try {
+            const isBold = document.queryCommandState('bold');
+            boldBtn.style.background = isBold ? '#cbd5e1' : 'none';
+            boldBtn.style.color = isBold ? '#0f172a' : 'var(--gray-700)';
+        } catch (e) {}
+        try {
+            const isItalic = document.queryCommandState('italic');
+            italicBtn.style.background = isItalic ? '#cbd5e1' : 'none';
+            italicBtn.style.color = isItalic ? '#0f172a' : 'var(--gray-700)';
+        } catch (e) {}
+        try {
+            const isUnderline = document.queryCommandState('underline');
+            underlineBtn.style.background = isUnderline ? '#cbd5e1' : 'none';
+            underlineBtn.style.color = isUnderline ? '#0f172a' : 'var(--gray-700)';
+        } catch (e) {}
+    };
 
     if (placeholder) {
         editor.innerHTML = initialValue ? convertMarkdownToHtml(initialValue) : placeholder;
@@ -396,6 +453,7 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
                 editor.innerHTML = '';
                 editor.style.color = 'var(--gray-900)';
             }
+            updateToolbar();
         });
         editor.addEventListener('blur', () => {
             if (!editor.innerHTML.replace(/<br\s*\/?>/gi, '').trim()) {
@@ -433,6 +491,7 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
                     editor.innerHTML = placeholder || '';
                     editor.style.color = placeholder ? '#94a3b8' : 'var(--gray-900)';
                 }
+                updateToolbar();
             }
         });
     } else {
@@ -449,6 +508,7 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
                     editor.innerHTML = placeholder || '';
                     editor.style.color = placeholder ? '#94a3b8' : 'var(--gray-900)';
                 }
+                updateToolbar();
             }
         });
     }
@@ -462,23 +522,97 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
         }
     };
 
-    editor.addEventListener('input', syncValue);
+    editor.addEventListener('input', () => {
+        syncValue();
+        updateToolbar();
+    });
+    editor.addEventListener('keyup', updateToolbar);
+    editor.addEventListener('mouseup', updateToolbar);
 
     editor.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
             e.preventDefault();
             document.execCommand('underline', false, null);
+            updateToolbar();
             syncValue();
         }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
             e.preventDefault();
             document.execCommand('bold', false, null);
+            updateToolbar();
             syncValue();
         }
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
             e.preventDefault();
             document.execCommand('italic', false, null);
+            updateToolbar();
             syncValue();
+        }
+
+        // Exit inline tags on Space key
+        if (e.key === ' ') {
+            const selection = window.getSelection();
+            if (selection.isCollapsed && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const container = range.startContainer;
+                const offset = range.startOffset;
+                
+                if (container.nodeType === Node.TEXT_NODE && offset === container.length) {
+                    const parent = container.parentNode;
+                    const inlineTags = ['strong', 'b', 'em', 'i', 'u', 'a'];
+                    if (parent && inlineTags.includes(parent.tagName.toLowerCase())) {
+                        if (container === parent.lastChild) {
+                            e.preventDefault();
+                            
+                            const spaceNode = document.createTextNode('\u00a0');
+                            if (parent.nextSibling) {
+                                parent.parentNode.insertBefore(spaceNode, parent.nextSibling);
+                            } else {
+                                parent.parentNode.appendChild(spaceNode);
+                            }
+                            
+                            const newRange = document.createRange();
+                            newRange.setStart(spaceNode, 1);
+                            newRange.setEnd(spaceNode, 1);
+                            selection.removeAllRanges();
+                            selection.addRange(newRange);
+                            
+                            updateToolbar();
+                            syncValue();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Prevent block-level formatting carry-over on Enter key
+        if (e.key === 'Enter') {
+            setTimeout(() => {
+                const selection = window.getSelection();
+                if (selection.isCollapsed && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const container = range.startContainer;
+                    
+                    const parent = container.parentNode;
+                    const inlineTags = ['strong', 'b', 'em', 'i', 'u', 'a'];
+                    if (parent && inlineTags.includes(parent.tagName.toLowerCase())) {
+                        if (parent.textContent === '' || parent.textContent === '\u200B') {
+                            const block = parent.parentNode;
+                            const textNode = document.createTextNode('');
+                            block.insertBefore(textNode, parent);
+                            parent.remove();
+                            
+                            const newRange = document.createRange();
+                            newRange.setStart(textNode, 0);
+                            newRange.setEnd(textNode, 0);
+                            selection.removeAllRanges();
+                            selection.addRange(newRange);
+                        }
+                    }
+                }
+                updateToolbar();
+                syncValue();
+            }, 0);
         }
     });
 
@@ -486,16 +620,19 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
     boldBtn.onclick = () => {
         editor.focus();
         document.execCommand('bold', false, null);
+        updateToolbar();
         syncValue();
     };
     italicBtn.onclick = () => {
         editor.focus();
         document.execCommand('italic', false, null);
+        updateToolbar();
         syncValue();
     };
     underlineBtn.onclick = () => {
         editor.focus();
         document.execCommand('underline', false, null);
+        updateToolbar();
         syncValue();
     };
     linkBtn.onclick = () => {
@@ -523,6 +660,7 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
                 link.style.color = 'var(--green-600)';
                 link.style.textDecoration = 'underline';
             }
+            updateToolbar();
             syncValue();
         }, () => {
             // Restore selection range
@@ -531,6 +669,7 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
                 selection.addRange(savedRange);
             }
             document.execCommand('unlink', false, null);
+            updateToolbar();
             syncValue();
         });
     };
@@ -542,11 +681,13 @@ window.initializeRichTextEditor = function (container, textareaId, placeholder, 
         } else {
             document.execCommand('removeFormat', false, null);
         }
+        updateToolbar();
         syncValue();
     };
 
     // Set initial value
     hiddenTextarea.value = initialValue || '';
+    updateToolbar();
 
     // Append elements
     container.appendChild(hiddenTextarea);

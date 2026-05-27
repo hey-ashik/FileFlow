@@ -33,7 +33,116 @@ if (!empty($user['profile_slug'])) {
             Set up your Custom URL Slug below to get your public profile link.
         </div>
     <?php endif; ?>
+<div class="profile-card"
+            style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <h2
+                style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                Settings</h2>
 
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label
+                            style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">Public
+                            Visibility</label>
+                        <div style="font-size: 0.8rem; color: #64748b;">If enabled, your profile can be searched by
+                            others and people can connect and message you.</div>
+                    </div>
+                    <label class="toggle-switch"
+                        style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;">
+                        <input type="checkbox" id="is_public" name="is_public" value="1" <?php echo ($user['is_public'] ?? 0) == 1 ? 'checked' : ''; ?> style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                </div>
+            </div>
+            <style>
+                .toggle-switch input:checked+.slider {
+                    background-color: #16a34a !important;
+                    /* Green matching standard */
+                }
+
+                .toggle-switch input:focus+.slider {
+                    box-shadow: 0 0 1px #16a34a;
+                }
+
+                .toggle-switch .slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 18px;
+                    width: 18px;
+                    left: 3px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: .4s;
+                    border-radius: 50%;
+                }
+
+                .toggle-switch input:checked+.slider:before {
+                    transform: translateX(20px);
+                }
+            </style>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Custom URL
+                    Slug</label>
+                <div
+                    style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; max-width: 100%;">
+                    <div
+                        style="background: #f1f5f9; padding: 0.75rem; border-right: 1px solid #cbd5e1; color: #64748b; white-space: nowrap;">
+                        /u/</div>
+                    <input type="text" id="profile_slug" name="profile_slug"
+                        value="<?php echo htmlspecialchars($user['profile_slug'] ?? ''); ?>"
+                        placeholder="my-custom-name"
+                        style="width: 100%; padding: 0.75rem; border: none; font-size: 1rem; outline: none; min-width: 0;">
+                </div>
+                <div id="slug-status" style="font-size: 0.85rem; margin-top: 0.5rem; font-weight: 500;"></div>
+            </div>
+
+            <?php if ($publicProfileUrl): ?>
+                <style>
+                    .live-url-text {
+                        color: #0ea5e9;
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                        text-decoration: none;
+                        word-break: break-word;
+                    }
+
+                    @media (max-width: 600px) {
+                        .live-url-text {
+                            font-size: 0.95rem;
+                        }
+                        .profile-card {
+                            padding: 1.25rem !important;
+                        }
+                    }
+                </style>
+                <!-- <div
+                    style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; text-align: center;">
+                    <p style="margin-bottom: 1rem; font-weight: 500;">Your profile is live at:</p>
+                    <a href="<?php echo htmlspecialchars($publicProfileUrl); ?>" target="_blank"
+                        class="live-url-text"><?php echo htmlspecialchars($publicProfileUrl); ?></a>
+
+                    <div
+                        style="display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; align-items: center; flex-wrap: wrap;">
+                        <div id="qrcode"></div>
+                        <div
+                            style="text-align: center; background: white; padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; min-width: 140px;">
+                            <div
+                                style="font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">
+                                Profile Visits</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: #0ea5e9;">
+                                <?php echo number_format($user['profile_visits'] ?? 0); ?>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #64748b; margin-top: 1rem;">Scan or share this QR code for your
+                        profile card.</p>
+                </div> -->
+            <?php endif; ?>
+        </div>
     <!-- Cover Photo Section -->
     <div class="profile-card"
         style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
@@ -218,9 +327,78 @@ if (!empty($user['profile_slug'])) {
             style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
             <h2
                 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
-                Public Profile Card</h2>
+                Privacy Protection</h2>
 
             <div class="form-group" style="margin-bottom: 1.5rem;">
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label
+                            style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">Hide Gmail/Email</label>
+                        <div style="font-size: 0.8rem; color: #64748b;">If enabled, your email address will be hidden on your profile card.</div>
+                    </div>
+                    <label class="toggle-switch"
+                        style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;">
+                        <input type="checkbox" id="hide_email" name="hide_email" value="1" <?php echo ($user['hide_email'] ?? 0) == 1 ? 'checked' : ''; ?> style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                </div>
+
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label
+                            style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">Hide Phone Number</label>
+                        <div style="font-size: 0.8rem; color: #64748b;">If enabled, your phone number will be hidden on your profile card.</div>
+                    </div>
+                    <label class="toggle-switch"
+                        style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;">
+                        <input type="checkbox" id="hide_phone" name="hide_phone" value="1" <?php echo ($user['hide_phone'] ?? 0) == 1 ? 'checked' : ''; ?> style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                </div>
+
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label
+                            style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">Hide Views</label>
+                        <div style="font-size: 0.8rem; color: #64748b;">If enabled, the number of views/visits will be hidden on your profile card.</div>
+                    </div>
+                    <label class="toggle-switch"
+                        style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;">
+                        <input type="checkbox" id="hide_views" name="hide_views" value="1" <?php echo ($user['hide_views'] ?? 0) == 1 ? 'checked' : ''; ?> style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                </div>
+
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label
+                            style="display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem;">Hide Followers</label>
+                        <div style="font-size: 0.8rem; color: #64748b;">If enabled, your followers/connections count will be hidden on your profile card.</div>
+                    </div>
+                    <label class="toggle-switch"
+                        style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;">
+                        <input type="checkbox" id="hide_followers" name="hide_followers" value="1" <?php echo ($user['hide_followers'] ?? 0) == 1 ? 'checked' : ''; ?> style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider round"
+                            style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-card"
+            style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 2rem;">
+            <h2
+                style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                Profile Card Views</h2>
+
+            <!-- <div class="form-group" style="margin-bottom: 1.5rem;">
                 <div
                     style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem;">
                     <div style="flex: 1; min-width: 200px;">
@@ -263,9 +441,9 @@ if (!empty($user['profile_slug'])) {
                 .toggle-switch input:checked+.slider:before {
                     transform: translateX(20px);
                 }
-            </style>
+            </style> -->
 
-            <div class="form-group" style="margin-bottom: 1.5rem;">
+            <!-- <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem;">Custom URL
                     Slug</label>
                 <div
@@ -279,9 +457,9 @@ if (!empty($user['profile_slug'])) {
                         style="width: 100%; padding: 0.75rem; border: none; font-size: 1rem; outline: none; min-width: 0;">
                 </div>
                 <div id="slug-status" style="font-size: 0.85rem; margin-top: 0.5rem; font-weight: 500;"></div>
-            </div>
+            </div> -->
 
-            <?php if ($publicProfileUrl): ?>
+            <!-- <?php if ($publicProfileUrl): ?>
                 <style>
                     .live-url-text {
                         color: #0ea5e9;
@@ -299,7 +477,7 @@ if (!empty($user['profile_slug'])) {
                             padding: 1.25rem !important;
                         }
                     }
-                </style>
+                </style> -->
                 <div
                     style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; text-align: center;">
                     <p style="margin-bottom: 1rem; font-weight: 500;">Your profile is live at:</p>

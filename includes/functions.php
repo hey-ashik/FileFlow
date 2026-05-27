@@ -62,6 +62,27 @@ function setupAdminAndSchema(): void {
         } catch (PDOException $e) {
             $db->exec("ALTER TABLE users ADD COLUMN `cover_path` VARCHAR(255) DEFAULT NULL");
         }
+
+        try {
+            $db->query("SELECT hide_email FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            try { $db->exec("ALTER TABLE users ADD COLUMN `hide_email` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $ex) {}
+        }
+        try {
+            $db->query("SELECT hide_phone FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            try { $db->exec("ALTER TABLE users ADD COLUMN `hide_phone` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $ex) {}
+        }
+        try {
+            $db->query("SELECT hide_views FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            try { $db->exec("ALTER TABLE users ADD COLUMN `hide_views` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $ex) {}
+        }
+        try {
+            $db->query("SELECT hide_followers FROM users LIMIT 1");
+        } catch (PDOException $e) {
+            try { $db->exec("ALTER TABLE users ADD COLUMN `hide_followers` TINYINT(1) NOT NULL DEFAULT 0"); } catch (Exception $ex) {}
+        }
         
         try {
             $db->query("SELECT cv_path FROM users LIMIT 1");
@@ -197,7 +218,7 @@ function setupAdminAndSchema(): void {
 
 function getVerifiedBadgeHtml($isVerified, $isAdmin = 0): string {
     if (!$isVerified && !$isAdmin) return '';
-    return '<svg class="verified-badge" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block; vertical-align:middle; margin-left:4px; flex-shrink:0;" title="Verified User"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.48 0-.941.1-1.36.278C14.767 2.535 13.498 1.7 12 1.7c-1.498 0-2.767.835-3.41 2.088-.42-.178-.88-.278-1.36-.278-2.108 0-3.817 1.78-3.817 3.99 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.58.875 2.95 2.148 3.6-.154.435-.238.905-.238 1.4 0 2.21 1.71 3.99 3.818 3.99.48 0 .941-.1 1.36-.278.643 1.253 1.712 2.088 3.41 2.088 1.498 0 2.767-.835 3.41-2.088.42.178.88.278 1.36.278 2.108 0 3.817-1.78 3.817-3.99 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6zm-12.61 3.327l-3.33-3.42 1.428-1.465 1.902 1.954 4.887-5.023 1.428 1.465-6.315 6.49z" fill="#1d9bf0"/></svg>';
+    return '<span style="display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 4px; vertical-align: middle;" title="Verified User"><i class="fa-solid fa-circle-check" style="color: rgb(62, 156, 230); font-size: 16px !important; line-height: 1; flex-shrink: 0;"></i></span>';
 }
 
 /**

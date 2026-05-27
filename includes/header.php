@@ -198,7 +198,8 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                         <?php endif; ?>
                                     </div>
                                     <div>
-                                        <div class="nav-dropdown-name" style="display: flex; align-items: center; gap: 4px;"><?php echo htmlspecialchars($currentUser['name']) . getVerifiedBadgeHtml($currentUser['is_verified'] ?? 0, $currentUser['is_admin'] ?? 0); ?>
+                                        <div class="nav-dropdown-name">
+                                            <?php echo htmlspecialchars($currentUser['name']) . getVerifiedBadgeHtml($currentUser['is_verified'] ?? 0, $currentUser['is_admin'] ?? 0); ?>
                                         </div>
                                         <div class="nav-dropdown-email">
                                             <?php echo htmlspecialchars($currentUser['email']); ?>
@@ -302,13 +303,19 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                                         ? `<img src="${profile.avatar_path}" style="width: 100%; height: 100%; object-fit: cover;">`
                                         : `<span>${(profile.full_name || 'U').substring(0, 1).toUpperCase()}</span>`;
 
+                                    const isVerified = (parseInt(profile.is_verified) || parseInt(profile.is_admin)) ? true : false;
+                                    const badgeHtml = isVerified ? `<span style="display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 4px; vertical-align: middle;" title="Verified User"><i class="fa-solid fa-circle-check" style="color: rgb(62, 156, 230); font-size: 16px !important; line-height: 1; flex-shrink: 0;"></i></span>` : '';
+
                                     html += `
                                     <a href="/u/${profile.profile_slug}" data-no-spa="true" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 8px; transition: background 0.2s; text-decoration: none; color: inherit; text-align: left;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
                                         <div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; background: ${avatarColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem; flex-shrink: 0;">
                                             ${avatarHtml}
                                         </div>
                                         <div style="min-width: 0; flex: 1;">
-                                            <div style="font-weight: 600; font-size: 0.9rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${profile.full_name}</div>
+                                            <div style="font-weight: 600; font-size: 0.9rem; color: #0f172a; display: flex; align-items: center; max-width: 100%; min-width: 0;">
+                                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1;">${profile.full_name}</span>
+                                                ${badgeHtml}
+                                            </div>
                                             <div style="font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${profile.profile_slug}</div>
                                         </div>
                                     </a>

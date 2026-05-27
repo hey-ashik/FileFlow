@@ -138,6 +138,10 @@ function getCurrentUser(): ?array {
         'cv_button_color' => $user['cv_button_color'] ?? '#16a34a',
         'profile_visits' => $user['profile_visits'] ?? 0,
         'is_public' => $user['is_public'] ?? 0,
+        'hide_email' => $user['hide_email'] ?? 0,
+        'hide_phone' => $user['hide_phone'] ?? 0,
+        'hide_views' => $user['hide_views'] ?? 0,
+        'hide_followers' => $user['hide_followers'] ?? 0,
         'timezone' => $_SESSION['user_timezone'] ?? 'UTC',
         'is_admin' => $_SESSION['is_admin'] ?? false,
         'is_verified' => (isset($user['is_admin']) && $user['is_admin'] == 1) ? 1 : ($user['is_verified'] ?? 0)

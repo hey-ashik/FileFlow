@@ -83,7 +83,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="video-frame-title">Video Tutorial</div>
                 </div>
                 <div class="video-frame-body">
-                    <iframe src="https://www.youtube.com/embed/dnK6af9gKqw?si=-ZZryoKQPR39e_XA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                    <iframe src="https://www.youtube.com/embed/O7jtF1yEPtk?si=4-IXClKHB90AYNuN" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                 </div>
             </div>
         </div>

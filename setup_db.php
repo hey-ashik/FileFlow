@@ -29,6 +29,11 @@ try {
         $db->exec("ALTER TABLE users ADD COLUMN is_public TINYINT(1) NOT NULL DEFAULT 0");
     } catch (PDOException $e) { /* Ignore if exists */ }
 
+    try { $db->exec("ALTER TABLE users ADD COLUMN `hide_email` TINYINT(1) NOT NULL DEFAULT 0"); } catch (PDOException $e) {}
+    try { $db->exec("ALTER TABLE users ADD COLUMN `hide_phone` TINYINT(1) NOT NULL DEFAULT 0"); } catch (PDOException $e) {}
+    try { $db->exec("ALTER TABLE users ADD COLUMN `hide_views` TINYINT(1) NOT NULL DEFAULT 0"); } catch (PDOException $e) {}
+    try { $db->exec("ALTER TABLE users ADD COLUMN `hide_followers` TINYINT(1) NOT NULL DEFAULT 0"); } catch (PDOException $e) {}
+
     try {
         $db->exec("ALTER TABLE folders ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL");
         echo "Added ip_address column to folders table.\n";

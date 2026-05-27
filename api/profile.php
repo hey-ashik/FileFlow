@@ -48,10 +48,14 @@ if ($action === 'update_profile') {
     }
 
     $isPublic = isset($_POST['is_public']) && $_POST['is_public'] === '1' ? 1 : 0;
+    $hideEmail = isset($_POST['hide_email']) && $_POST['hide_email'] === '1' ? 1 : 0;
+    $hidePhone = isset($_POST['hide_phone']) && $_POST['hide_phone'] === '1' ? 1 : 0;
+    $hideViews = isset($_POST['hide_views']) && $_POST['hide_views'] === '1' ? 1 : 0;
+    $hideFollowers = isset($_POST['hide_followers']) && $_POST['hide_followers'] === '1' ? 1 : 0;
 
     try {
-        $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ? WHERE id = ?");
-        $stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $userId]);
+        $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ?, hide_email = ?, hide_phone = ?, hide_views = ?, hide_followers = ? WHERE id = ?");
+        $stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $hideEmail, $hidePhone, $hideViews, $hideFollowers, $userId]);
         $_SESSION['user_name'] = $fullName; // update session
         clearUserCache($userId);
         echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
@@ -65,6 +69,18 @@ if ($action === 'update_profile') {
         } catch (Exception $ex) {}
         try {
             $db->exec("ALTER TABLE users ADD COLUMN space_limit_mb INT NOT NULL DEFAULT 100");
+        } catch (Exception $ex) {}
+        try {
+            $db->exec("ALTER TABLE users ADD COLUMN `hide_email` TINYINT(1) NOT NULL DEFAULT 0");
+        } catch (Exception $ex) {}
+        try {
+            $db->exec("ALTER TABLE users ADD COLUMN `hide_phone` TINYINT(1) NOT NULL DEFAULT 0");
+        } catch (Exception $ex) {}
+        try {
+            $db->exec("ALTER TABLE users ADD COLUMN `hide_views` TINYINT(1) NOT NULL DEFAULT 0");
+        } catch (Exception $ex) {}
+        try {
+            $db->exec("ALTER TABLE users ADD COLUMN `hide_followers` TINYINT(1) NOT NULL DEFAULT 0");
         } catch (Exception $ex) {}
         
         try {
@@ -97,8 +113,8 @@ if ($action === 'update_profile') {
         
         try {
             // Re-run the update
-            $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ? WHERE id = ?");
-            if ($stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $userId])) {
+            $stmt = $db->prepare("UPDATE users SET full_name = ?, phone = ?, work_experience = ?, social_links = ?, profile_slug = ?, cv_description = ?, cv_button_color = ?, is_public = ?, hide_email = ?, hide_phone = ?, hide_views = ?, hide_followers = ? WHERE id = ?");
+            if ($stmt->execute([$fullName, $phone, $workExperience, $socialLinks, $profileSlug, $cvDescription, $cvButtonColor, $isPublic, $hideEmail, $hidePhone, $hideViews, $hideFollowers, $userId])) {
                 $_SESSION['user_name'] = $fullName;
                 clearUserCache($userId);
                 echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);

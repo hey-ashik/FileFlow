@@ -9,7 +9,7 @@ $results = [];
 if (!empty($query)) {
     // Search by name, phone, or slug
     $likeQuery = "%{$query}%";
-    $stmt = $db->prepare("SELECT id, full_name, profile_slug, avatar_path, avatar_color, work_experience FROM users WHERE is_public = 1 AND is_active = 1 AND (full_name LIKE ? OR phone LIKE ? OR profile_slug LIKE ?) ORDER BY full_name ASC LIMIT 50");
+    $stmt = $db->prepare("SELECT id, full_name, profile_slug, avatar_path, avatar_color, work_experience, is_verified, is_admin FROM users WHERE is_public = 1 AND is_active = 1 AND (full_name LIKE ? OR phone LIKE ? OR profile_slug LIKE ?) ORDER BY full_name ASC LIMIT 50");
     $stmt->execute([$likeQuery, $likeQuery, $likeQuery]);
     $results = $stmt->fetchAll();
 }
@@ -43,7 +43,12 @@ if ($isAjax) {
                             <?php endif; ?>
                         </div>
                         <div style="min-width: 0; flex: 1;">
-                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($profile['full_name']); ?></h4>
+                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a; display: flex; align-items: center; max-width: 100%; min-width: 0;">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1;">
+                                    <?php echo htmlspecialchars($profile['full_name']); ?>
+                                </span>
+                                <?php echo getVerifiedBadgeHtml($profile['is_verified'] ?? 0, $profile['is_admin'] ?? 0); ?>
+                            </h4>
                             <?php if (!empty($profile['profile_slug'])): ?>
                                 <div style="font-size: 0.85rem; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@<?php echo htmlspecialchars($profile['profile_slug']); ?></div>
                             <?php endif; ?>
@@ -132,7 +137,12 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?php endif; ?>
                                 </div>
                                 <div style="min-width: 0; flex: 1;">
-                                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($profile['full_name']); ?></h4>
+                                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: #0f172a; display: flex; align-items: center; max-width: 100%; min-width: 0;">
+                                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1;">
+                                            <?php echo htmlspecialchars($profile['full_name']); ?>
+                                        </span>
+                                        <?php echo getVerifiedBadgeHtml($profile['is_verified'] ?? 0, $profile['is_admin'] ?? 0); ?>
+                                    </h4>
                                     <?php if (!empty($profile['profile_slug'])): ?>
                                         <div style="font-size: 0.85rem; color: #64748b; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@<?php echo htmlspecialchars($profile['profile_slug']); ?></div>
                                     <?php endif; ?>

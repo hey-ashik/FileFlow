@@ -7,24 +7,33 @@ if (!function_exists('incrementProfileVisits')) {
 $db = getDB();
 
 try {
-    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits, is_public, is_verified, is_admin FROM users WHERE profile_slug = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, profile_visits, is_public, is_verified, is_admin, hide_email, hide_phone, hide_views, hide_followers FROM users WHERE profile_slug = ? AND is_active = 1");
     $stmt->execute([$profileSlug]);
     $userProfile = $stmt->fetch();
 } catch (PDOException $e) {
-    // Fallback if profile_visits or is_public column doesn't exist yet
-    $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, is_verified, is_admin FROM users WHERE profile_slug = ? AND is_active = 1");
-    $stmt->execute([$profileSlug]);
-    $userProfile = $stmt->fetch();
-    if ($userProfile) {
-        $userProfile['profile_visits'] = 0;
-        $userProfile['is_public'] = 0;
+    try {
+        $stmt = $db->prepare("SELECT id, full_name, email, avatar_path, avatar_color, cover_path, phone, work_experience, social_links, cv_path, cv_description, cv_button_color, is_verified, is_admin FROM users WHERE profile_slug = ? AND is_active = 1");
+        $stmt->execute([$profileSlug]);
+        $userProfile = $stmt->fetch();
+        if ($userProfile) {
+            $userProfile['profile_visits'] = 0;
+            $userProfile['is_public'] = 0;
+            $userProfile['hide_email'] = 0;
+            $userProfile['hide_phone'] = 0;
+            $userProfile['hide_views'] = 0;
+            $userProfile['hide_followers'] = 0;
+        }
+    } catch (PDOException $e2) {
+        $userProfile = null;
     }
 }
-if ($userProfile && !isset($userProfile['is_verified'])) {
-    $userProfile['is_verified'] = 0;
-}
-if ($userProfile && !isset($userProfile['is_admin'])) {
-    $userProfile['is_admin'] = 0;
+if ($userProfile) {
+    if (!isset($userProfile['is_verified'])) $userProfile['is_verified'] = 0;
+    if (!isset($userProfile['is_admin'])) $userProfile['is_admin'] = 0;
+    if (!isset($userProfile['hide_email'])) $userProfile['hide_email'] = 0;
+    if (!isset($userProfile['hide_phone'])) $userProfile['hide_phone'] = 0;
+    if (!isset($userProfile['hide_views'])) $userProfile['hide_views'] = 0;
+    if (!isset($userProfile['hide_followers'])) $userProfile['hide_followers'] = 0;
 }
 
 if (!$userProfile) {
@@ -75,6 +84,9 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- QRCode JS -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -411,12 +423,17 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                 </div>
             </div>
             <div class="card-body">
-                <h1 class="name" style="display:inline-flex; align-items:center; gap:0.35rem; justify-content:center; width:100%;"><?php echo htmlspecialchars($userProfile['full_name']); ?><?php echo getVerifiedBadgeHtml($userProfile['is_verified'] ?? 0, $userProfile['is_admin'] ?? 0); ?></h1>
+                <h1 class="name" style="text-align:center;"><?php echo htmlspecialchars($userProfile['full_name']); ?><?php echo getVerifiedBadgeHtml($userProfile['is_verified'] ?? 0, $userProfile['is_admin'] ?? 0); ?></h1>
                 <div style="font-size: 0.9rem; color: #94a3b8; font-weight: 500;">
                     @<?php echo htmlspecialchars($profileSlug); ?></div>
 
+                <?php 
+                $showEmail = !empty($userProfile['email']) && empty($userProfile['hide_email']);
+                $showPhone = !empty($userProfile['phone']) && empty($userProfile['hide_phone']);
+                if ($showEmail || $showPhone): 
+                ?>
                 <div class="contact-info">
-                    <?php if (!empty($userProfile['email'])): ?>
+                    <?php if ($showEmail): ?>
                         <div class="info-row">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -429,7 +446,7 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($userProfile['phone'])): ?>
+                    <?php if ($showPhone): ?>
                         <div class="info-row">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path
@@ -442,6 +459,7 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                         </div>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
 
                 <?php if (!empty($userProfile['is_public'])): 
                     // Get connection count
@@ -477,12 +495,14 @@ $isLoggedInUser = function_exists('isLoggedIn') && isLoggedIn();
                         <div style="display: flex; align-items: center; justify-content: flex-start; gap: 0.75rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 500; margin-bottom: 1rem;">
                             <span style="display: flex; align-items: center; gap: 0.25rem;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                Views: <span style="color: var(--text-main); font-weight: 700;"><?php echo number_format($userProfile['profile_visits'] ?? 0); ?></span>
+                                Views: <span style="color: var(--text-main); font-weight: 700; display: inline-flex; align-items: center;"><?php echo !empty($userProfile['hide_views']) ? '<i class="fa-solid fa-eye-slash" style="color: rgb(126, 126, 126);"></i>' : number_format($userProfile['profile_visits'] ?? 0); ?></span>
                             </span>
+                            
                             <span style="color: #cbd5e1;">|</span>
+
                             <span style="display: flex; align-items: center; gap: 0.25rem;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                Followers: <span style="color: var(--text-main); font-weight: 700;"><?php echo number_format($followerCount); ?></span>
+                                Followers: <span style="color: var(--text-main); font-weight: 700; display: inline-flex; align-items: center;"><?php echo !empty($userProfile['hide_followers']) ? '<i class="fa-solid fa-eye-slash" style="color: rgb(126, 126, 126);"></i>' : number_format($followerCount); ?></span>
                             </span>
                         </div>
                         <?php if ($connStatus !== 'self'): ?>

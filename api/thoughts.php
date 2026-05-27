@@ -426,7 +426,7 @@ if ($action === 'get_comments') {
             echo '<div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; ' . $marginLeft . '">';
             echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="display: block; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color:white; font-size:0.8rem; font-weight:bold; text-decoration:none; outline:none; ' . $avatarStyle . '">' . $avatar . '</a>';
             echo '<div style="background: #f1f5f9; border-radius: 12px; padding: 0.75rem 1rem; flex: 1; position: relative;">';
-            echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 0.9rem; margin-right: 0.5rem; outline:none; display: inline-flex; align-items: center; gap: 0.25rem;">' . htmlspecialchars($comment['full_name']) . getVerifiedBadgeHtml($comment['is_verified'] ?? 0) . '</a>';
+            echo '<a href="/u/' . htmlspecialchars($comment['profile_slug']) . '" data-no-spa="true" style="text-decoration: none; color: var(--gray-900); font-weight: 700; font-size: 0.9rem; margin-right: 0.5rem; outline:none;">' . htmlspecialchars($comment['full_name']) . getVerifiedBadgeHtml($comment['is_verified'] ?? 0) . '</a>';
             echo '<span style="font-size: 0.75rem; color: var(--gray-500);">' . timeAgo($comment['created_at']) . '</span>';
             
             $canEditComment = $currentUserId && ($comment['user_id'] == $currentUserId);

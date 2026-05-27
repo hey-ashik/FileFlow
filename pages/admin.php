@@ -913,7 +913,7 @@ if ($view === 'overview') {
                                             </div>
                                             <div>
                                                 <div
-                                                    style="font-weight: 600; color: var(--admin-text-main); display: flex; align-items: center; gap: 0.5rem;">
+                                                    style="font-weight: 600; color: var(--admin-text-main);">
                                                     <?= htmlspecialchars($u['full_name']) . getVerifiedBadgeHtml($u['is_verified'] ?? 0, $u['is_admin'] ?? 0) ?>
                                                     <?php if ($u['is_admin']): ?><span
                                                             style="font-size: 0.65rem; background: var(--green-600); color: white; padding: 2px 8px; border-radius: 99px; font-weight: 700; text-transform: uppercase;">Admin</span><?php endif; ?>
