@@ -177,6 +177,9 @@ switch (true) {
     case preg_match('#^/api/delete-file$#', $path):
         require __DIR__ . '/api/delete-file.php';
         break;
+    case preg_match('#^/api/rename-file$#', $path):
+        require __DIR__ . '/api/rename-file.php';
+        break;
     case preg_match('#^/api/folder-info$#', $path):
         require __DIR__ . '/api/folder-info.php';
         break;

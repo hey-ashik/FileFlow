@@ -267,7 +267,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <?php echo MAX_FILES_PER_UPLOAD; ?> files at once
                     </p>
                     <input type="file" id="file-input" class="file-input" multiple
-                        accept=".pdf,.docx,.doc,.ppt,.pptx,.xls,.xlsx,.mp3,.zip,.jpg,.jpeg,.png,.webp">
+                        accept=".pdf,.docx,.doc,.ppt,.pptx,.xls,.xlsx,.txt,.mp3,.zip,.jpg,.jpeg,.png,.webp">
                 </div>
                 <div class="dropzone-active-overlay" id="dropzone-active">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -356,6 +356,12 @@ require_once __DIR__ . '/../includes/header.php';
                                     <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
                             </a>
+                            <button class="btn btn-sm btn-outline btn-rename"
+                                onclick="renameFile(<?php echo $file['id']; ?>)"
+                                title="Rename File"
+                                style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
+                                <i class="fa-solid fa-pencil" style="font-size: 14px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;"></i>
+                            </button>
                             <?php if (isLoggedIn() && getCurrentUser()['id'] === $folder['user_id']): ?>
                                 <button class="btn btn-sm btn-outline-danger" onclick="deleteFile(<?php echo $file['id']; ?>)"
                                     title="Delete File" style="padding: 0.5rem;">
@@ -565,7 +571,75 @@ require_once __DIR__ . '/../includes/header.php';
                 }
             }
         );
-    }
+    };
+
+    window.renameFile = function (fileId) {
+        const card = document.getElementById(`file-${fileId}`);
+        if (!card) return;
+        const nameEl = card.querySelector('.file-name');
+        if (!nameEl) return;
+        const currentFullName = nameEl.getAttribute('title') || nameEl.textContent.trim();
+        
+        // Separate name and extension
+        const lastDotIndex = currentFullName.lastIndexOf('.');
+        let nameWithoutExt = currentFullName;
+        let ext = '';
+        if (lastDotIndex !== -1) {
+            nameWithoutExt = currentFullName.substring(0, lastDotIndex);
+            ext = currentFullName.substring(lastDotIndex);
+        }
+        
+        customPrompt(
+            'Rename File',
+            'Enter a new name for the file:',
+            nameWithoutExt,
+            async (newName) => {
+                newName = newName ? newName.trim() : '';
+                if (!newName) {
+                    showToast('File name cannot be empty', 'error');
+                    return;
+                }
+                
+                // Re-append extension if not provided by user
+                let finalName = newName;
+                if (ext && !finalName.endsWith(ext)) {
+                    finalName += ext;
+                }
+                
+                const formData = new FormData();
+                formData.append('file_id', fileId);
+                formData.append('new_name', finalName);
+                formData.append('csrf_token', getCSRF());
+                
+                try {
+                    const res = await fetch('/api/rename-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.csrf_token) updateCSRF(data.csrf_token);
+                    
+                    if (data.success) {
+                        showToast('File renamed successfully.');
+                        
+                        // Update UI name element
+                        nameEl.textContent = finalName;
+                        nameEl.setAttribute('title', finalName);
+                        
+                        // Update any download link on page
+                        const downloadBtn = document.getElementById(`btn-download-${fileId}`);
+                        if (downloadBtn) {
+                            downloadBtn.setAttribute('href', `/api/download?id=${fileId}`);
+                        }
+                    } else {
+                        showToast(data.errors?.[0] || 'Rename failed', 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error', 'error');
+                }
+            }
+        );
+    };
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

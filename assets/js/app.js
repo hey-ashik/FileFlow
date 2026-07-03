@@ -731,6 +731,84 @@ function initGlobal() {
         }
     });
 
+    // Global paste delegation for file uploads (copied screenshots / Windows+V)
+    document.addEventListener('paste', (e) => {
+        const dropzone = document.getElementById('upload-dropzone');
+        if (!dropzone) return;
+
+        // If the user is typing in a text input, textarea, or contenteditable, let default paste proceed (for text content).
+        const target = e.target;
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+            // Check if there is text in the clipboard. If so, let the default paste handle text inputs.
+            const types = e.clipboardData?.types || [];
+            if (types.includes('text/plain') || types.includes('text/html')) {
+                return;
+            }
+        }
+
+        const files = e.clipboardData?.files;
+        if (files && files.length > 0) {
+            const filesToUpload = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                let renamedFile = file;
+
+                // Rename pasted images (from screenshots or clipboard history) to have a unique timestamp filename
+                if (file.type.startsWith('image/')) {
+                    const date = new Date();
+                    const timestamp = date.getFullYear() +
+                        String(date.getMonth() + 1).padStart(2, '0') +
+                        String(date.getDate()).padStart(2, '0') + '_' +
+                        String(date.getHours()).padStart(2, '0') +
+                        String(date.getMinutes()).padStart(2, '0') +
+                        String(date.getSeconds()).padStart(2, '0');
+                    const random = Math.floor(Math.random() * 1000);
+                    let ext = 'png';
+                    if (file.type === 'image/jpeg') ext = 'jpg';
+                    else if (file.type === 'image/webp') ext = 'webp';
+                    else if (file.type === 'image/gif') ext = 'gif';
+
+                    const nameWithoutExt = file.name.split('.').slice(0, -1).join('.');
+                    if (!nameWithoutExt || nameWithoutExt === 'blob' || nameWithoutExt === 'image') {
+                        renamedFile = new File([file], `screenshot_${timestamp}_${random}.${ext}`, { type: file.type });
+                    }
+                }
+                filesToUpload.push(renamedFile);
+            }
+
+            if (filesToUpload.length > 0) {
+                e.preventDefault();
+                handleFiles(filesToUpload);
+            }
+        } else {
+            // Check if there is plain text in the clipboard
+            const text = e.clipboardData?.getData('text/plain');
+            if (text && text.trim().length > 0) {
+                // Determine if we should intercept: user is NOT focusing on an input, textarea, or contenteditable
+                const target = e.target;
+                const isWritingElement = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+                
+                if (!isWritingElement) {
+                    const date = new Date();
+                    const timestamp = date.getFullYear() +
+                        String(date.getMonth() + 1).padStart(2, '0') +
+                        String(date.getDate()).padStart(2, '0') + '_' +
+                        String(date.getHours()).padStart(2, '0') +
+                        String(date.getMinutes()).padStart(2, '0') +
+                        String(date.getSeconds()).padStart(2, '0');
+                    const random = Math.floor(Math.random() * 1000);
+
+                    // Create file from the pasted text
+                    const blob = new Blob([text], { type: 'text/plain' });
+                    const textFile = new File([blob], `text_${timestamp}_${random}.txt`, { type: 'text/plain' });
+                    
+                    e.preventDefault();
+                    handleFiles([textFile]);
+                }
+            }
+        }
+    });
+
     isGlobalInitDone = true;
 }
 
@@ -740,14 +818,6 @@ function initApp() {
     initHistory();
     initQR();
     initAuthForms();
-
-    // Show refresh update toast on dashboard page
-    const path = window.location.pathname;
-    if (path === '/dashboard') {
-        setTimeout(() => {
-            showToast("Click Refresh Button !", "info-no-icon", 5000);
-        }, 500);
-    }
 }
 
 /* ===== SPA NAVIGATION (Next.js Style) ===== */
@@ -774,6 +844,14 @@ function initSpaNavigation() {
             // Check for data-no-spa attribute
             if (link.getAttribute('data-no-spa') === 'true') return;
 
+            // Bypass SPA when transitioning to/from admin pages (cross-domain boundary)
+            const fromAdmin = window.location.pathname.startsWith('/admin');
+            const toAdmin = url.pathname.startsWith('/admin');
+            if ((fromAdmin && !toAdmin) || (!fromAdmin && toAdmin)) {
+                window.location.href = link.href;
+                return;
+            }
+
             // Bypass SPA for chat links to ensure stability and correct message sending
             if (url.search.includes('chat=')) {
                 window.location.href = link.href;
@@ -798,8 +876,10 @@ function initSpaNavigation() {
         const isApi = url.pathname.startsWith('/api/');
 
         if (isInternal && isNotSpecial && !isApi && !spaCache.has(link.href)) {
-            // Don't prefetch chat links as they might trigger a refresh
-            if (url.search.includes('chat=')) return;
+            // Don't prefetch if moving to/from admin page (cross-domain boundary) or chat links
+            const fromAdmin = window.location.pathname.startsWith('/admin');
+            const toAdmin = url.pathname.startsWith('/admin');
+            if ((fromAdmin && !toAdmin) || (!fromAdmin && toAdmin) || url.search.includes('chat=')) return;
             prefetchSpaLink(link.href);
         }
     });
@@ -809,8 +889,11 @@ function initSpaNavigation() {
     window.addEventListener('popstate', () => {
         const newPath = window.location.pathname + window.location.search;
         if (newPath !== window.spaCurrentPath) {
-            // If navigating to a chat via back/forward, force a reload
-            if (window.location.search.includes('chat=')) {
+            const fromAdmin = window.spaCurrentPath.startsWith('/admin');
+            const toAdmin = newPath.startsWith('/admin');
+            
+            // Force browser reload if crossing the admin/non-admin boundary or chat
+            if (window.location.search.includes('chat=') || (fromAdmin && !toAdmin) || (!fromAdmin && toAdmin)) {
                 window.location.reload();
                 return;
             }
@@ -830,6 +913,184 @@ async function prefetchSpaLink(url) {
     } catch (err) { }
 }
 
+function getSkeletonHTML(urlStr) {
+    let path = '';
+    try {
+        path = new URL(urlStr).pathname;
+    } catch (e) {
+        try {
+            path = new URL(urlStr, window.location.origin).pathname;
+        } catch (err) {
+            path = urlStr;
+        }
+    }
+    
+    let content = '';
+    
+    if (path === '/' || path === '') {
+        content = `
+            <div style="max-width: 1200px; margin: 0 auto; padding: 4rem 1.5rem; text-align: center;">
+                <div class="skeleton" style="height: 48px; width: 60%; margin: 0 auto 1.5rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 24px; width: 40%; margin: 0 auto 3rem; border-radius: 6px;"></div>
+                <div class="skeleton" style="height: 250px; width: 100%; max-width: 700px; margin: 0 auto 4rem; border-radius: 16px;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        `;
+    } else if (path === '/dashboard') {
+        content = `
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 36px; width: 280px; border-radius: 6px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 180px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 40px; width: 150px; border-radius: 100px;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div class="skeleton" style="height: 28px; width: 150px; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 36px; width: 120px; border-radius: 6px;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        `;
+    } else if (path === '/thoughts') {
+        content = `
+            <div style="max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 32px; width: 220px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 140px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton" style="height: 160px; border-radius: 12px; margin-bottom: 2rem;"></div>
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div style="padding: 1.5rem; background: var(--white); border-radius: 12px; border: 1px solid var(--gray-100);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+                            <div class="skeleton" style="width: 44px; height: 44px; border-radius: 50%;"></div>
+                            <div>
+                                <div class="skeleton" style="height: 18px; width: 120px; margin-bottom: 6px; border-radius: 4px;"></div>
+                                <div class="skeleton" style="height: 12px; width: 80px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 16px; width: 75%; margin-bottom: 1.5rem; border-radius: 4px;"></div>
+                    </div>
+                    <div style="padding: 1.5rem; background: var(--white); border-radius: 12px; border: 1px solid var(--gray-100);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+                            <div class="skeleton" style="width: 44px; height: 44px; border-radius: 50%;"></div>
+                            <div>
+                                <div class="skeleton" style="height: 18px; width: 120px; margin-bottom: 6px; border-radius: 4px;"></div>
+                                <div class="skeleton" style="height: 12px; width: 80px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton" style="height: 16px; width: 95%; margin-bottom: 8px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 16px; width: 60%; margin-bottom: 1.5rem; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (path === '/messages') {
+        content = `
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; height: 75vh; display: flex; gap: 1.5rem;">
+                <div style="width: 320px; display: flex; flex-direction: column; gap: 1rem; border-right: 1px solid var(--gray-100); padding-right: 1.5rem;">
+                    <div class="skeleton" style="height: 40px; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-left: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--gray-100); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div class="skeleton" style="width: 40px; height: 40px; border-radius: 50%;"></div>
+                        <div>
+                            <div class="skeleton" style="height: 18px; width: 140px; margin-bottom: 6px; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 1rem; justify-content: flex-end; margin-bottom: 2rem;">
+                        <div class="skeleton" style="height: 48px; width: 45%; align-self: flex-start; border-radius: 12px 12px 12px 0;"></div>
+                        <div class="skeleton" style="height: 36px; width: 30%; align-self: flex-end; border-radius: 12px 12px 0 12px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 50px; border-radius: 25px;"></div>
+                </div>
+            </div>
+        `;
+    } else if (path === '/admin') {
+        content = `
+            <div style="max-width: 100%; display: flex; gap: 0; min-height: 85vh; padding-top: 20px;">
+                <!-- Sidebar Skeleton -->
+                <div style="width: 280px; border-right: 1px solid var(--gray-100); padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; box-sizing: border-box;">
+                    <div class="skeleton" style="height: 18px; width: 80px; margin-bottom: 8px; border-radius: 4px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                </div>
+                <!-- Content Skeleton -->
+                <div style="flex: 1; padding: 2rem; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <div class="skeleton" style="height: 36px; width: 250px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 40px; width: 120px; border-radius: 6px;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 250px; border-radius: 10px;"></div>
+                </div>
+            </div>
+        `;
+    } else if (path === '/profile' || path.startsWith('/u/')) {
+        content = `
+            <div style="max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div class="skeleton" style="height: 200px; border-radius: 12px; margin-bottom: 4rem;"></div>
+                <div style="position: relative; padding: 0 2rem; margin-bottom: 2rem;">
+                    <div class="skeleton" style="position: absolute; top: -70px; left: 2rem; width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--white);"></div>
+                    <div style="padding-top: 50px;">
+                        <div class="skeleton" style="height: 28px; width: 200px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 140px; margin-bottom: 2rem; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        content = `
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 32px; width: 240px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 150px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 2.5rem;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    return `<div class="skeleton-container-wrapper" style="width: 100%;">${content}</div>`;
+}
+
 async function handleSpaLink(url, push = true) {
     const loader = document.getElementById('spa-loader-fill');
     if (loader) {
@@ -837,37 +1098,41 @@ async function handleSpaLink(url, push = true) {
         loader.style.opacity = '1';
     }
 
+    const currentContent = document.querySelector('.main-content');
+    if (currentContent) {
+        currentContent.innerHTML = getSkeletonHTML(url);
+    }
+
+    const startTime = Date.now();
+
     try {
         let html = spaCache.get(url);
         if (!html) {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to load page');
             html = await response.text();
+            spaCache.set(url, html);
         }
 
         if (loader) loader.style.width = '70%';
+        
+        // Enforce a minimum display delay of 600ms for smooth skeleton transition
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(0, 600 - elapsed);
+        await new Promise(resolve => setTimeout(resolve, delay));
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
         // Update Title and Content
         document.title = doc.title;
         const newContent = doc.querySelector('.main-content');
-        const currentContent = document.querySelector('.main-content');
 
         if (newContent && currentContent) {
             currentContent.innerHTML = newContent.innerHTML;
 
-            // Execute scripts inside new content
-            const scripts = currentContent.querySelectorAll('script');
-            scripts.forEach(oldScript => {
-                const newScript = document.createElement('script');
-                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                oldScript.parentNode.replaceChild(newScript, oldScript);
-            });
-
-            // Update Body Classes (Home vs Inner)
+            // Update Body Classes (Home vs Inner) first so the DOM is laid out and visible when scripts run
             document.body.className = doc.body.className;
+            document.body.classList.remove('is-loading-page');
 
             // Update Navbar Active States
             updateNavbarActive(url);
@@ -876,11 +1141,36 @@ async function handleSpaLink(url, push = true) {
             if (push) history.pushState({}, '', url);
             window.spaCurrentPath = window.location.pathname + window.location.search;
 
-            // Re-initialize scripts for new content
-            initApp();
-
-            // Scroll to top
-            window.scrollTo(0, 0);
+            // Re-initialize scripts for new content sequentially (ensures scripts with src dependencies like Chart.js load first)
+            const scripts = Array.from(currentContent.querySelectorAll('script'));
+            
+            async function executeScripts(index) {
+                if (index >= scripts.length) {
+                    initApp();
+                    window.scrollTo(0, 0);
+                    return;
+                }
+                const oldScript = scripts[index];
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                
+                if (oldScript.parentNode) {
+                    if (oldScript.src) {
+                        newScript.src = oldScript.src;
+                        newScript.onload = () => executeScripts(index + 1);
+                        newScript.onerror = () => executeScripts(index + 1);
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                    } else {
+                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                        await executeScripts(index + 1);
+                    }
+                } else {
+                    await executeScripts(index + 1);
+                }
+            }
+            
+            await executeScripts(0);
         }
 
         if (loader) {
@@ -897,10 +1187,26 @@ async function handleSpaLink(url, push = true) {
 }
 
 function updateNavbarActive(url) {
-    const path = new URL(url).pathname;
+    const parsedUrl = new URL(url);
+    const path = parsedUrl.pathname;
+    const search = parsedUrl.search;
+    const fullPath = path + search;
+    
+    // Regular Navbar links
     document.querySelectorAll('.nav-link').forEach(link => {
         const linkPath = new URL(link.href).pathname;
         if (linkPath === path) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+
+    // Admin Sidebar navigation links (matches exact full path with view queries)
+    document.querySelectorAll('.admin-nav-item').forEach(link => {
+        const linkObj = new URL(link.href);
+        const linkFullPath = linkObj.pathname + linkObj.search;
+        if (linkFullPath === fullPath || (linkFullPath === '/admin' && fullPath === '/admin?view=overview')) {
             link.classList.add('active');
         } else {
             link.classList.remove('active');
@@ -1659,6 +1965,9 @@ function addFileCard(file) {
             <a href="/api/download?id=${file.id}" class="btn btn-sm btn-download" title="Download" id="btn-download-${file.id}" download>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </a>
+            <button class="btn btn-sm btn-outline btn-rename" onclick="renameFile(${file.id})" title="Rename File" style="padding: 0.5rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-600); display:flex; align-items:center; justify-content:center;">
+                <i class="fa-solid fa-pencil" style="font-size: 14px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;"></i>
+            </button>
             ${deleteBtn}
         </div>`;
     grid.insertBefore(card, grid.firstChild);
@@ -1758,8 +2067,55 @@ function initUserDropdown() {
 
     avatarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('show');
+        
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+            return;
+        }
+
+        // Save original HTML if not saved yet
+        if (!dropdown.dataset.originalHtml) {
+            dropdown.dataset.originalHtml = dropdown.innerHTML;
+        }
+
+        // Render drop-down menu items skeleton
+        dropdown.innerHTML = `
+            <div class="skeleton-dropdown" style="padding: 12px; width: 100%; box-sizing: border-box; animation: fadeInSkeleton 0.2s ease-out;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div class="skeleton" style="width: 40px; height: 40px; border-radius: 50%;"></div>
+                    <div>
+                        <div class="skeleton" style="height: 14px; width: 100px; margin-bottom: 6px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 10px; width: 130px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton" style="height: 1px; width: 100%; margin-bottom: 12px;"></div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="skeleton" style="width: 16px; height: 16px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 12px; width: 80px; border-radius: 4px;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="skeleton" style="width: 16px; height: 16px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 12px; width: 90px; border-radius: 4px;"></div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="skeleton" style="width: 16px; height: 16px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 12px; width: 70px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        dropdown.classList.add('show');
+
+        // Swap with original HTML after a smooth 400ms delay to let the skeleton shimmer
+        setTimeout(() => {
+            if (dropdown.classList.contains('show')) {
+                dropdown.innerHTML = dropdown.dataset.originalHtml;
+            }
+        }, 400);
     });
+
     document.addEventListener('click', (e) => {
         if (!dropdown.contains(e.target) && !avatarBtn.contains(e.target)) {
             dropdown.classList.remove('show');

@@ -419,6 +419,8 @@ function createFolder(string $name, ?string $password = null, ?string $expiry = 
                 $stmt->execute([$name, $slug, $displayName, $userId, $ip]);
             }
         }
+
+        $newFolderId = (int)$db->lastInsertId();
         
         if ($userId) {
             clearUserCache($userId);
@@ -427,7 +429,7 @@ function createFolder(string $name, ?string $password = null, ?string $expiry = 
         return [
             'success' => true,
             'folder' => [
-                'id' => $db->lastInsertId(),
+                'id' => $newFolderId,
                 'name' => $name,
                 'slug' => $slug,
                 'display_name' => $displayName,
@@ -752,6 +754,8 @@ function uploadFile(array $file, int $folderId, string $folderSlug, int $maxSize
             $file['size'],
             $mimeType
         ]);
+
+        $newFileId = (int)$db->lastInsertId();
         
         // Update folder stats
         $db->prepare("UPDATE folders SET total_files = total_files + 1, total_size = total_size + ? WHERE id = ?")->execute([$file['size'], $folderId]);
@@ -772,7 +776,7 @@ function uploadFile(array $file, int $folderId, string $folderSlug, int $maxSize
         return [
             'success' => true,
             'file' => [
-                'id' => $db->lastInsertId(),
+                'id' => $newFileId,
                 'name' => $originalName . '.' . $ext,
                 'size' => formatFileSize($file['size']),
                 'extension' => $ext,
@@ -922,4 +926,49 @@ function parsePhpSize(string $size): int {
         case 'k': $val *= 1024;
     }
     return $val;
+}
+
+/**
+ * Rename a file
+ */
+function renameFileInDatabase(int $fileId, string $newName): array {
+    $newName = trim($newName);
+    
+    // Prevent directory traversal or empty name
+    if (empty($newName) || strpos($newName, '/') !== false || strpos($newName, '\\') !== false) {
+        return ['success' => false, 'errors' => ['Invalid file name.']];
+    }
+    
+    $file = getFileById($fileId);
+    if (!$file) {
+        return ['success' => false, 'errors' => ['File not found.']];
+    }
+    
+    // Ensure the file extension matches the original file extension
+    $originalExt = strtolower($file['file_extension']);
+    $newExt = strtolower(pathinfo($newName, PATHINFO_EXTENSION));
+    
+    if ($newExt !== $originalExt) {
+        $newName .= '.' . $originalExt;
+    }
+    
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("UPDATE files SET original_name = ? WHERE id = ?");
+        $stmt->execute([$newName, $fileId]);
+        
+        // Clear cached stats/folders/files
+        $stmtUser = $db->prepare("SELECT user_id, slug FROM folders WHERE id = ?");
+        $stmtUser->execute([$file['folder_id']]);
+        $folderRow = $stmtUser->fetch();
+        if ($folderRow) {
+            clearFolderCache($folderRow['slug'], $file['folder_id'], $folderRow['user_id']);
+        }
+        
+        return ['success' => true];
+    } catch (PDOException $e) {
+        error_log("File rename DB error: " . $e->getMessage());
+        return ['success' => false, 'errors' => ['Database error while renaming file.']];
+    }
 }

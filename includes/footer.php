@@ -71,6 +71,37 @@
     </div>
 </div>
 
+<!-- Custom Prompt Modal -->
+<div class="modal-backdrop" id="custom-prompt-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.2s ease;">
+    <div class="modal-content"
+        style="background: var(--white); padding: 2rem; border-radius: var(--radius-lg); width: 90%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); transform: scale(0.95); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 50%; background: var(--green-50); color: var(--green-600); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fa-solid fa-pencil" style="font-size: 16px;"></i>
+            </div>
+            <h3 id="prompt-modal-title"
+                style="font-size: 1.25rem; font-weight: 600; color: var(--gray-900); margin: 0;">Rename File</h3>
+        </div>
+        <p id="prompt-modal-message"
+            style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.95rem; line-height: 1.5;"></p>
+        <div style="margin-bottom: 1.5rem;">
+            <input type="text" id="prompt-modal-input" 
+                style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-200); border-radius: var(--radius); font-size: 0.95rem; outline: none; transition: border-color 0.2s;"
+                placeholder="Enter file name..."
+                onfocus="this.style.borderColor='var(--green-600)'"
+                onblur="this.style.borderColor='var(--gray-200)'">
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline-secondary" id="prompt-modal-cancel"
+                style="padding: 0.6rem 1.2rem; background: var(--gray-50); border: 1px solid var(--gray-200); color: var(--gray-700); cursor: pointer;">Cancel</button>
+            <button type="button" class="btn" id="prompt-modal-ok"
+                style="padding: 0.6rem 1.2rem; background: var(--green-600); color: white; border: none; box-shadow: 0 2px 8px rgba(22,163,74,0.3); cursor: pointer;">Save</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const APP_URL = '<?php echo APP_URL; ?>';
     var CSRF_TOKEN = '<?php echo $csrfToken; ?>';
@@ -116,8 +147,82 @@
         btnCancel.addEventListener('click', handleCancel);
         btnOk.addEventListener('click', handleOk);
     };
+
+    // Custom Prompt Function
+    window.customPrompt = function (title, message, defaultValue, onConfirm, cancelText = 'Cancel', okText = 'Save', okColor = 'var(--green-600)') {
+        const modal = document.getElementById('custom-prompt-modal');
+        const modalContent = modal.querySelector('.modal-content');
+        const input = document.getElementById('prompt-modal-input');
+        
+        document.getElementById('prompt-modal-title').textContent = title;
+        document.getElementById('prompt-modal-message').textContent = message;
+        input.value = defaultValue;
+
+        modal.style.display = 'flex';
+        // Trigger reflow
+        void modal.offsetWidth;
+        modal.style.opacity = '1';
+        modalContent.style.transform = 'scale(1)';
+        
+        // Focus and select input text
+        setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 100);
+
+        const btnCancel = document.getElementById('prompt-modal-cancel');
+        const btnOk = document.getElementById('prompt-modal-ok');
+
+        btnCancel.textContent = cancelText;
+        btnOk.textContent = okText;
+        btnOk.style.background = okColor;
+        btnOk.style.boxShadow = `0 2px 8px ${okColor === 'var(--green-600)' ? 'rgba(22,163,74,0.3)' : okColor + '4D'}`;
+
+        const cleanup = () => {
+            modal.style.opacity = '0';
+            modalContent.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                btnCancel.removeEventListener('click', handleCancel);
+                btnOk.removeEventListener('click', handleOk);
+                input.removeEventListener('keydown', handleKeyDown);
+            }, 200);
+        };
+
+        const handleCancel = () => { cleanup(); };
+        const handleOk = () => { 
+            const val = input.value;
+            cleanup(); 
+            onConfirm(val); 
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleOk();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCancel();
+            }
+        };
+
+        btnCancel.addEventListener('click', handleCancel);
+        btnOk.addEventListener('click', handleOk);
+        input.addEventListener('keydown', handleKeyDown);
+    };
+
+    // First load skeleton cleanup with smooth 750ms minimum visible duration
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            document.body.classList.remove('is-loading-page');
+            const firstLoadSkel = document.getElementById('first-load-skeleton');
+            if (firstLoadSkel) {
+                firstLoadSkel.style.opacity = '0';
+                setTimeout(() => firstLoadSkel.remove(), 250);
+            }
+        }, 750);
+    });
 </script>
-<script src="/assets/js/app.js?v=3.5.6"></script>
+<script src="/assets/js/app.js?v=5.2.6"></script>
 </body>
 
 </html>

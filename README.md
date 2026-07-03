@@ -287,6 +287,10 @@ Access the database setup tool via browser or command line. This creates the sch
 * **Via Browser:** Navigate to `http://fileflow.local/setup_db.php`
 * **Via CLI:** Run `php setup_db.php` in the terminal.
 
+#### Default Admin Credentials (Auto-created during setup)
+* **Email:** `ashikulislam2070@gmail.com`
+* **Password:** `Ashik@21032001`
+* **Role:** Administrator (Permissions to view admin panel and adjust platform settings)
 
 ### 6. Verify Permissions
 Ensure the upload directory is writable:

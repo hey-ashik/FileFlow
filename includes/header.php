@@ -45,13 +45,27 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
 
     <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Main Stylesheet -->
-    <?php $ver = '3.4.3'; // Premium UI Overhaul: Custom dropdown select arrow alignment ?>
+    <?php $ver = '5.2.6'; // Premium UI Overhaul: Custom dropdown select arrow alignment ?>
     <link rel="stylesheet" href="/assets/css/style.css?v=<?php echo $ver; ?>">
+    <style>
+        /* Prevent FOUC: hide main content immediately during initial load */
+        body.is-loading-page .main-content {
+            display: none !important;
+        }
+        body.is-loading-page #first-load-skeleton {
+            display: block !important;
+        }
+        #first-load-skeleton {
+            display: none;
+        }
+    </style>
 </head>
 
-<body class="<?php echo $currentPage === 'home' ? 'page-home' : 'page-inner'; ?>">
+<body class="<?php echo $currentPage === 'home' ? 'page-home' : 'page-inner'; ?> is-loading-page">
     <!-- SPA Loader -->
     <div id="spa-loader">
         <div id="spa-loader-fill"></div>
@@ -288,7 +302,24 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
                     }
 
                     headerSearchTimeout = setTimeout(async () => {
-                        headerSearchResults.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem 0; font-size: 0.9rem;">Searching...</div>';
+                        headerSearchResults.innerHTML = `
+                            <div class="skeleton-search" style="padding: 4px; display: flex; flex-direction: column; gap: 8px; animation: fadeInSkeleton 0.2s ease-out;">
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 6px;">
+                                    <div class="skeleton" style="width: 36px; height: 36px; border-radius: 50%;"></div>
+                                    <div>
+                                        <div class="skeleton" style="height: 12px; width: 120px; margin-bottom: 6px; border-radius: 4px;"></div>
+                                        <div class="skeleton" style="height: 8px; width: 80px; border-radius: 4px;"></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 6px;">
+                                    <div class="skeleton" style="width: 36px; height: 36px; border-radius: 50%;"></div>
+                                    <div>
+                                        <div class="skeleton" style="height: 12px; width: 140px; margin-bottom: 6px; border-radius: 4px;"></div>
+                                        <div class="skeleton" style="height: 8px; width: 70px; border-radius: 4px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                         headerSearchResults.style.display = 'block';
 
                         try {
@@ -348,4 +379,162 @@ $pageDescription = $pageDescription ?? APP_DESCRIPTION;
             }
         });
     </script>
+    <?php
+    // Render first-load skeleton based on current page
+    $skeletonHtml = '';
+    $currentPageVal = $currentPage ?? '';
+    if ($currentPageVal === 'home') {
+        $skeletonHtml = '
+            <div style="max-width: 1200px; margin: 0 auto; padding: 4rem 1.5rem; text-align: center;">
+                <div class="skeleton" style="height: 48px; width: 60%; margin: 0 auto 1.5rem; border-radius: 8px;"></div>
+                <div class="skeleton" style="height: 24px; width: 40%; margin: 0 auto 3rem; border-radius: 6px;"></div>
+                <div class="skeleton" style="height: 250px; width: 100%; max-width: 700px; margin: 0 auto 4rem; border-radius: 16px;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 180px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        ';
+    } else if ($currentPageVal === 'dashboard') {
+        $skeletonHtml = '
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 36px; width: 280px; border-radius: 6px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 180px; border-radius: 4px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 40px; width: 150px; border-radius: 100px;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 100px; border-radius: 12px;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div class="skeleton" style="height: 28px; width: 150px; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 36px; width: 120px; border-radius: 6px;"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;">
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 80px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        ';
+    } else if ($currentPageVal === 'thoughts') {
+        $skeletonHtml = '
+            <div style="max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 32px; width: 220px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 140px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton" style="height: 160px; border-radius: 12px; margin-bottom: 2rem;"></div>
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div style="padding: 1.5rem; background: var(--white); border-radius: 12px; border: 1px solid var(--gray-100);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+                            <div class="skeleton" style="width: 44px; height: 44px; border-radius: 50%;"></div>
+                            <div>
+                                <div class="skeleton" style="height: 18px; width: 120px; margin-bottom: 6px; border-radius: 4px;"></div>
+                                <div class="skeleton" style="height: 12px; width: 80px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px; border-radius: 4px;"></div>
+                        <div class="skeleton" style="height: 16px; width: 75%; margin-bottom: 1.5rem; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        ';
+    } else if ($currentPageVal === 'messages') {
+        $skeletonHtml = '
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; height: 75vh; display: flex; gap: 1.5rem;">
+                <div style="width: 320px; display: flex; flex-direction: column; gap: 1rem; border-right: 1px solid var(--gray-100); padding-right: 1.5rem;">
+                    <div class="skeleton" style="height: 40px; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                    <div class="skeleton" style="height: 60px; border-radius: 10px;"></div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-left: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--gray-100); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div class="skeleton" style="width: 40px; height: 40px; border-radius: 50%;"></div>
+                        <div>
+                            <div class="skeleton" style="height: 18px; width: 140px; margin-bottom: 6px; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 1rem; justify-content: flex-end; margin-bottom: 2rem;">
+                        <div class="skeleton" style="height: 48px; width: 45%; align-self: flex-start; border-radius: 12px 12px 12px 0;"></div>
+                        <div class="skeleton" style="height: 36px; width: 30%; align-self: flex-end; border-radius: 12px 12px 0 12px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 50px; border-radius: 25px;"></div>
+                </div>
+            </div>
+        ';
+    } else if ($currentPageVal === 'admin') {
+        $skeletonHtml = '
+            <div style="max-width: 100%; display: flex; gap: 0; min-height: 85vh; padding-top: 20px;">
+                <!-- Sidebar Skeleton -->
+                <div style="width: 280px; border-right: 1px solid var(--gray-100); padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; box-sizing: border-box;">
+                    <div class="skeleton" style="height: 18px; width: 80px; margin-bottom: 8px; border-radius: 4px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                    <div class="skeleton" style="height: 38px; width: 100%; border-radius: 6px;"></div>
+                </div>
+                <!-- Content Skeleton -->
+                <div style="flex: 1; padding: 2rem; box-sizing: border-box;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <div class="skeleton" style="height: 36px; width: 250px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 40px; width: 120px; border-radius: 6px;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                        <div class="skeleton" style="height: 100px; border-radius: 10px;"></div>
+                    </div>
+                    <div class="skeleton" style="height: 250px; border-radius: 10px;"></div>
+                </div>
+            </div>
+        ';
+    } else if ($currentPageVal === 'profile' || $currentPageVal === 'profile_card') {
+        $skeletonHtml = '
+            <div style="max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div class="skeleton" style="height: 200px; border-radius: 12px; margin-bottom: 4rem;"></div>
+                <div style="position: relative; padding: 0 2rem; margin-bottom: 2rem;">
+                    <div class="skeleton" style="position: absolute; top: -70px; left: 2rem; width: 110px; height: 110px; border-radius: 50%; border: 4px solid var(--white);"></div>
+                    <div style="padding-top: 50px;">
+                        <div class="skeleton" style="height: 28px; width: 200px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 140px; margin-bottom: 2rem; border-radius: 4px;"></div>
+                    </div>
+                </div>
+            </div>
+        ';
+    } else {
+        $skeletonHtml = '
+            <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <div class="skeleton" style="height: 32px; width: 240px; margin-bottom: 8px; border-radius: 6px;"></div>
+                        <div class="skeleton" style="height: 18px; width: 150px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton" style="height: 180px; border-radius: 12px; margin-bottom: 2.5rem;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem;">
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                    <div class="skeleton" style="height: 140px; border-radius: 12px;"></div>
+                </div>
+            </div>
+        ';
+    }
+    echo '
+    <div id="first-load-skeleton" class="skeleton-container-wrapper" style="width: 100%; min-height: 100vh; padding-top: 72px;">
+        ' . $skeletonHtml . '
+    </div>';
+    ?>
     <main class="main-content">

@@ -657,77 +657,100 @@ if ($view === 'overview') {
                 <div style="width: 100%; height: 300px; position: relative;">
                     <canvas id="uploadsChart"></canvas>
                 </div>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
                     (function () {
-                        const chartDataFolders = <?= json_encode($chartDataFolders) ?>;
-                        const chartDataFiles = <?= json_encode($chartDataFiles) ?>;
-                        const chartLabels = <?= json_encode($chartLabels) ?>;
+                        function initChart() {
+                            const canvas = document.getElementById('uploadsChart');
+                            if (!canvas || typeof Chart === 'undefined') {
+                                setTimeout(initChart, 50);
+                                return;
+                            }
+                            
+                            const rect = canvas.getBoundingClientRect();
+                            if (rect.width === 0) {
+                                setTimeout(initChart, 50);
+                                return;
+                            }
 
-                        const ctx = document.getElementById('uploadsChart').getContext('2d');
-                        let adminChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: chartLabels,
-                                datasets: [{
-                                    label: 'Folders Created',
-                                    data: chartDataFolders,
-                                    borderColor: '#3c50e0',
-                                    backgroundColor: 'rgba(60, 80, 224, 0.1)',
-                                    borderWidth: 3,
-                                    fill: true,
-                                    tension: 0.4,
-                                    pointBackgroundColor: '#3c50e0',
-                                    pointRadius: 4,
-                                    pointHoverRadius: 6
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: { display: false },
-                                    tooltip: {
-                                        backgroundColor: '#1c2434',
-                                        padding: 12,
-                                        titleFont: { size: 13 },
-                                        bodyFont: { size: 14, weight: 'bold' },
-                                        displayColors: false
-                                    }
+                            const chartDataFolders = <?= json_encode($chartDataFolders) ?>;
+                            const chartDataFiles = <?= json_encode($chartDataFiles) ?>;
+                            const chartLabels = <?= json_encode($chartLabels) ?>;
+
+                            const ctx = canvas.getContext('2d');
+                            let adminChart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: chartLabels,
+                                    datasets: [{
+                                        label: 'Folders Created',
+                                        data: chartDataFolders,
+                                        borderColor: '#3c50e0',
+                                        backgroundColor: 'rgba(60, 80, 224, 0.1)',
+                                        borderWidth: 3,
+                                        fill: true,
+                                        tension: 0.4,
+                                        pointBackgroundColor: '#3c50e0',
+                                        pointRadius: 4,
+                                        pointHoverRadius: 6
+                                    }]
                                 },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: { precision: 0, color: '#64748b' },
-                                        grid: { color: '#e2e8f0', drawBorder: false }
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            backgroundColor: '#1c2434',
+                                            padding: 12,
+                                            titleFont: { size: 13 },
+                                            bodyFont: { size: 14, weight: 'bold' },
+                                            displayColors: false
+                                        }
                                     },
-                                    x: {
-                                        ticks: { color: '#64748b' },
-                                        grid: { display: false, drawBorder: false }
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { precision: 0, color: '#64748b' },
+                                            grid: { color: '#e2e8f0', drawBorder: false }
+                                        },
+                                        x: {
+                                            ticks: { color: '#64748b' },
+                                            grid: { display: false, drawBorder: false }
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
 
-                        document.getElementById('chart-selector').addEventListener('change', function (e) {
-                            const val = e.target.value;
-                            if (val === 'folders') {
-                                document.getElementById('chart-title').textContent = 'System Performance (Folders Created)';
-                                adminChart.data.datasets[0].label = 'Folders Created';
-                                adminChart.data.datasets[0].data = chartDataFolders;
-                                adminChart.data.datasets[0].borderColor = '#3c50e0';
-                                adminChart.data.datasets[0].backgroundColor = 'rgba(60, 80, 224, 0.1)';
-                                adminChart.data.datasets[0].pointBackgroundColor = '#3c50e0';
-                            } else {
-                                document.getElementById('chart-title').textContent = 'System Performance (Files Uploaded)';
-                                adminChart.data.datasets[0].label = 'Files Uploaded';
-                                adminChart.data.datasets[0].data = chartDataFiles;
-                                adminChart.data.datasets[0].borderColor = '#10b981'; // emerald-500
-                                adminChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.1)';
-                                adminChart.data.datasets[0].pointBackgroundColor = '#10b981';
+                            const selector = document.getElementById('chart-selector');
+                            if (selector) {
+                                selector.addEventListener('change', function (e) {
+                                    const val = e.target.value;
+                                    if (val === 'folders') {
+                                        document.getElementById('chart-title').textContent = 'System Performance (Folders Created)';
+                                        adminChart.data.datasets[0].label = 'Folders Created';
+                                        adminChart.data.datasets[0].data = chartDataFolders;
+                                        adminChart.data.datasets[0].borderColor = '#3c50e0';
+                                        adminChart.data.datasets[0].backgroundColor = 'rgba(60, 80, 224, 0.1)';
+                                        adminChart.data.datasets[0].pointBackgroundColor = '#3c50e0';
+                                    } else {
+                                        document.getElementById('chart-title').textContent = 'System Performance (Files Uploaded)';
+                                        adminChart.data.datasets[0].label = 'Files Uploaded';
+                                        adminChart.data.datasets[0].data = chartDataFiles;
+                                        adminChart.data.datasets[0].borderColor = '#10b981'; // emerald-500
+                                        adminChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                                        adminChart.data.datasets[0].pointBackgroundColor = '#10b981';
+                                    }
+                                    adminChart.update();
+                                });
                             }
-                            adminChart.update();
-                        });
+                        }
+
+                        // Run on next paint tick or when ready
+                        if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', initChart);
+                        } else {
+                            initChart();
+                        }
                     })();
                 </script>
             </div>

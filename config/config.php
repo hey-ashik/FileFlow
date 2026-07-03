@@ -27,6 +27,7 @@ define('ALLOWED_EXTENSIONS', [
     'pptx' => ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
     'xls'  => ['application/vnd.ms-excel'],
     'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    'txt'  => ['text/plain'],
     // Audio
     'mp3'  => ['audio/mpeg', 'audio/mp3'],
     // Archives
@@ -58,6 +59,7 @@ define('FILE_TYPE_ICONS', [
     'pptx' => '📊',
     'xls'  => '📈',
     'xlsx' => '📈',
+    'txt'  => '📝',
     'mp3'  => '🎵',
     'zip'  => '📦',
     'jpg'  => '🖼️',
@@ -76,6 +78,7 @@ define('FILE_TYPE_CATEGORIES', [
     'pptx' => 'presentation',
     'xls'  => 'spreadsheet',
     'xlsx' => 'spreadsheet',
+    'txt'  => 'document',
     'mp3'  => 'audio',
     'zip'  => 'archive',
     'jpg'  => 'image',

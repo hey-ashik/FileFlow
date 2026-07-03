@@ -399,13 +399,17 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="dash-folder-info" style="flex: 1;">
                                 <div class="dash-folder-name"><?php echo htmlspecialchars($f['display_name']); ?></div>
                                 <div class="dash-folder-meta">
-                                    <span><?php echo $f['total_files']; ?> files</span>
-                                    <span><?php echo formatFileSize($f['total_size']); ?></span>
+                                    <div class="meta-row-top" style="display: flex; align-items: center;">
+                                        <span><?php echo $f['total_files']; ?> files</span>
+                                        <span style="margin: 0 8px; color: var(--gray-300);">|</span>
+                                        <span><?php echo formatFileSize($f['total_size']); ?></span>
+                                    </div>
+                                    <span class="meta-separator" style="margin: 0 8px; color: var(--gray-300);">&bull;</span>
                                     <span>
                                         <?php if (!empty($f['password_hash'])): ?>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                 stroke-width="2.5"
-                                                style="color: var(--amber-500); margin-right: 2px; vertical-align: middle; margin-top: -2px;">
+                                                style="color: var(--amber-500); margin-right: 4px; vertical-align: middle;">
                                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                             </svg>
@@ -432,201 +436,217 @@ require_once __DIR__ . '/../includes/header.php';
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Network Speed Monitor logic
-        const dlVal = document.querySelector('#dl-speed .val');
-        const ulVal = document.querySelector('#ul-speed .val');
-        const typeLabel = document.getElementById('net-type-label');
+    (function () {
+        function initSpeedTest() {
+            // Network Speed Monitor logic
+            const dlVal = document.querySelector('#dl-speed .val');
+            const ulVal = document.querySelector('#ul-speed .val');
+            const typeLabel = document.getElementById('net-type-label');
+            if (!dlVal && !ulVal) return;
 
-        let lastActiveDlMbps = 0;
+            let lastActiveDlMbps = 0;
 
-        async function runActiveSpeedTest() {
-            // Detect connection type name if available
-            let connectionName = 'Active Test';
-            if (navigator.connection) {
-                connectionName = (navigator.connection.effectiveType || 'network').toUpperCase();
-                if (navigator.connection.type) {
-                    connectionName += ` (${navigator.connection.type.toUpperCase()})`;
-                }
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                connectionName = isIOS ? 'iOS / Safari' : 'WiFi / Ethernet';
-            }
-
-            if (typeLabel) typeLabel.textContent = `Network: ${connectionName}`;
-
-            try {
-                const start = performance.now();
-                // Fetching a lightweight 10KB dummy asset specifically created to estimate speed without server overhead
-                const response = await fetch('/assets/speedtest.bin?_t=' + Date.now(), { cache: 'no-store' });
-                const blob = await response.blob();
-                const end = performance.now();
-
-                const durationSec = (end - start) / 1000;
-
-                // Deduct approximate latency to calculate actual network throughput
-                const latency = (navigator.connection?.rtt || 40) / 1000;
-                const adjustedDuration = Math.max(durationSec - latency, 0.005);
-
-                const bits = blob.size * 8;
-                const bps = bits / adjustedDuration;
-                let dlMbps = bps / 1000000;
-
-                // Set boundaries to prevent extreme spikes/glitches
-                if (dlMbps > 1000) dlMbps = 1000;
-                if (dlMbps < 0.1) dlMbps = 0.1;
-
-                lastActiveDlMbps = dlMbps;
-
-                let ulRatio = 0.4;
-                if (dlMbps > 80) ulRatio = 0.8; // High speed fiber/ethernet
-                const ulMbps = dlMbps * ulRatio;
-
-                if (dlVal) dlVal.textContent = dlMbps.toFixed(1);
-                if (ulVal) ulVal.textContent = ulMbps.toFixed(1);
-
-                // Real-time fluctuation to show live active traffic changes
-                clearInterval(window.netFluctuateInterval);
-                window.netFluctuateInterval = setInterval(() => {
-                    if (lastActiveDlMbps > 0) {
-                        const dlFluct = lastActiveDlMbps * (1 + (Math.random() * 0.15 - 0.075)); // +/- 7.5%
-                        const ulFluct = (lastActiveDlMbps * ulRatio) * (1 + (Math.random() * 0.15 - 0.075));
-                        if (dlVal) dlVal.textContent = dlFluct.toFixed(1);
-                        if (ulVal) ulVal.textContent = ulFluct.toFixed(1);
+            async function runActiveSpeedTest() {
+                // Detect connection type name if available
+                let connectionName = 'Active Test';
+                if (navigator.connection) {
+                    connectionName = (navigator.connection.effectiveType || 'network').toUpperCase();
+                    if (navigator.connection.type) {
+                        connectionName += ` (${navigator.connection.type.toUpperCase()})`;
                     }
-                }, 1000);
+                } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    connectionName = isIOS ? 'iOS / Safari' : 'WiFi / Ethernet';
+                }
 
-            } catch (e) {
-                if (dlVal && dlVal.textContent === '--') dlVal.textContent = 'Err';
-                if (ulVal && ulVal.textContent === '--') ulVal.textContent = 'Err';
+                if (typeLabel) typeLabel.textContent = `Network: ${connectionName}`;
+
+                try {
+                    const start = performance.now();
+                    // Fetching a lightweight 10KB dummy asset specifically created to estimate speed without server overhead
+                    const response = await fetch('/assets/speedtest.bin?_t=' + Date.now(), { cache: 'no-store' });
+                    const blob = await response.blob();
+                    const end = performance.now();
+
+                    const durationSec = (end - start) / 1000;
+
+                    // Deduct approximate latency to calculate actual network throughput
+                    const latency = (navigator.connection?.rtt || 40) / 1000;
+                    const adjustedDuration = Math.max(durationSec - latency, 0.005);
+
+                    const bits = blob.size * 8;
+                    const bps = bits / adjustedDuration;
+                    let dlMbps = bps / 1000000;
+
+                    // Set boundaries to prevent extreme spikes/glitches
+                    if (dlMbps > 1000) dlMbps = 1000;
+                    if (dlMbps < 0.1) dlMbps = 0.1;
+
+                    lastActiveDlMbps = dlMbps;
+
+                    let ulRatio = 0.4;
+                    if (dlMbps > 80) ulRatio = 0.8; // High speed fiber/ethernet
+                    const ulMbps = dlMbps * ulRatio;
+
+                    if (dlVal) dlVal.textContent = dlMbps.toFixed(1);
+                    if (ulVal) ulVal.textContent = ulMbps.toFixed(1);
+
+                    // Real-time fluctuation to show live active traffic changes
+                    clearInterval(window.netFluctuateInterval);
+                    window.netFluctuateInterval = setInterval(() => {
+                        if (lastActiveDlMbps > 0) {
+                            const dlFluct = lastActiveDlMbps * (1 + (Math.random() * 0.15 - 0.075)); // +/- 7.5%
+                            const ulFluct = (lastActiveDlMbps * ulRatio) * (1 + (Math.random() * 0.15 - 0.075));
+                            if (dlVal) dlVal.textContent = dlFluct.toFixed(1);
+                            if (ulVal) ulVal.textContent = ulFluct.toFixed(1);
+                        }
+                    }, 1000);
+
+                } catch (e) {
+                    if (dlVal && dlVal.textContent === '--') dlVal.textContent = 'Err';
+                    if (ulVal && ulVal.textContent === '--') ulVal.textContent = 'Err';
+                }
             }
+
+            // Run active speed test for EVERYONE on a loop
+            runActiveSpeedTest();
+            // Refresh the true speed baseline every 20 seconds to guarantee ZERO server load
+            if (window.netSpeedInterval) clearInterval(window.netSpeedInterval);
+            window.netSpeedInterval = setInterval(runActiveSpeedTest, 20000);
         }
 
-        // Run active speed test for EVERYONE on a loop
-        runActiveSpeedTest();
-        // Refresh the true speed baseline every 20 seconds to guarantee ZERO server load
-        setInterval(runActiveSpeedTest, 20000);
-    });
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSpeedTest);
+        } else {
+            setTimeout(initSpeedTest, 50);
+        }
+    })();
 </script>
 
 <script>
-    // Chart data from PHP
-    const uploadChartData = <?php echo json_encode($uploadStats); ?>;
+    (function () {
+        const uploadChartData = <?php echo json_encode($uploadStats); ?>;
 
-    // Initialize dashboard clock
-    function initDashClock() {
-        function updateClock() {
-            const now = new Date();
-            const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
-            const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const timeEl = document.getElementById('clock-time');
-            const dateEl = document.getElementById('clock-date');
-            if (timeEl) timeEl.textContent = now.toLocaleTimeString(undefined, timeOpts);
-            if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, dateOpts);
-        }
-        updateClock();
-        if (window.dashClockInterval) clearInterval(window.dashClockInterval);
-        window.dashClockInterval = setInterval(updateClock, 1000);
-    }
-
-    // Draw bar chart on canvas
-    function drawUploadChart() {
-        const canvas = document.getElementById('upload-chart');
-        if (!canvas || !uploadChartData.length) return;
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = 260 * dpr;
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = '260px';
-        ctx.scale(dpr, dpr);
-
-        const w = rect.width, h = 260;
-        const padding = { top: 20, right: 20, bottom: 40, left: 50 };
-        const chartW = w - padding.left - padding.right;
-        const chartH = h - padding.top - padding.bottom;
-        const maxVal = Math.max(...uploadChartData.map(d => d.files), 1);
-        const barCount = uploadChartData.length;
-        const gap = 12;
-        const barW = Math.min((chartW - gap * (barCount + 1)) / barCount, 60);
-        const totalBarArea = barCount * barW + (barCount + 1) * gap;
-        const offsetX = padding.left + (chartW - totalBarArea) / 2 + gap;
-
-        // Background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, w, h);
-
-        // Grid lines
-        ctx.strokeStyle = '#f3f4f6';
-        ctx.lineWidth = 1;
-        const gridLines = 4;
-        for (let i = 0; i <= gridLines; i++) {
-            const y = padding.top + (chartH / gridLines) * i;
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(w - padding.right, y);
-            ctx.stroke();
-            // Y labels
-            ctx.fillStyle = '#9ca3af';
-            ctx.font = '11px Inter, sans-serif';
-            ctx.textAlign = 'right';
-            const label = Math.round(maxVal - (maxVal / gridLines) * i);
-            ctx.fillText(label, padding.left - 8, y + 4);
+        // Initialize dashboard clock
+        function initDashClock() {
+            function updateClock() {
+                const now = new Date();
+                const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const timeEl = document.getElementById('clock-time');
+                const dateEl = document.getElementById('clock-date');
+                if (timeEl) timeEl.textContent = now.toLocaleTimeString(undefined, timeOpts);
+                if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, dateOpts);
+            }
+            updateClock();
+            if (window.dashClockInterval) clearInterval(window.dashClockInterval);
+            window.dashClockInterval = setInterval(updateClock, 1000);
         }
 
-        // Bars with animation-ready values
-        const gradient = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
-        gradient.addColorStop(0, '#16a34a');
-        gradient.addColorStop(1, '#059669');
+        // Draw bar chart on canvas
+        function drawUploadChart() {
+            const canvas = document.getElementById('upload-chart');
+            if (!canvas || !uploadChartData.length) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            
+            // Retry if the container width is not ready (due to fade-in transitions or layout delay)
+            if (rect.width === 0) {
+                setTimeout(drawUploadChart, 50);
+                return;
+            }
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = 260 * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = '260px';
+            ctx.scale(dpr, dpr);
 
-        uploadChartData.forEach((d, i) => {
-            const x = offsetX + i * (barW + gap);
-            const barH = maxVal > 0 ? (d.files / maxVal) * chartH : 0;
-            const y = padding.top + chartH - barH;
+            const w = rect.width, h = 260;
+            const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+            const chartW = w - padding.left - padding.right;
+            const chartH = h - padding.top - padding.bottom;
+            const maxVal = Math.max(...uploadChartData.map(d => d.files), 1);
+            const barCount = uploadChartData.length;
+            const gap = 12;
+            const barW = Math.min((chartW - gap * (barCount + 1)) / barCount, 60);
+            const totalBarArea = barCount * barW + (barCount + 1) * gap;
+            const offsetX = padding.left + (chartW - totalBarArea) / 2 + gap;
 
-            // Bar shadow
-            ctx.fillStyle = 'rgba(22, 163, 74, 0.08)';
-            ctx.beginPath();
-            ctx.roundRect(x + 2, y + 2, barW, barH, [6, 6, 0, 0]);
-            ctx.fill();
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
 
-            // Bar
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.roundRect(x, y, barW, barH, [6, 6, 0, 0]);
-            ctx.fill();
-
-            // Value on top
-            if (d.files > 0) {
-                ctx.fillStyle = '#16a34a';
-                ctx.font = 'bold 12px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(d.files, x + barW / 2, y - 6);
+            // Grid lines
+            ctx.strokeStyle = '#f3f4f6';
+            ctx.lineWidth = 1;
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i++) {
+                const y = padding.top + (chartH / gridLines) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(w - padding.right, y);
+                ctx.stroke();
+                // Y labels
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '11px Inter, sans-serif';
+                ctx.textAlign = 'right';
+                const label = Math.round(maxVal - (maxVal / gridLines) * i);
+                ctx.fillText(label, padding.left - 8, y + 4);
             }
 
-            // X label
-            ctx.fillStyle = '#6b7280';
-            ctx.font = '12px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(d.label, x + barW / 2, h - padding.bottom + 20);
-        });
-    }
+            // Bars with animation-ready values
+            const gradient = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
+            gradient.addColorStop(0, '#16a34a');
+            gradient.addColorStop(1, '#059669');
 
-    // Run immediately when script is evaluated
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+            uploadChartData.forEach((d, i) => {
+                const x = offsetX + i * (barW + gap);
+                const barH = maxVal > 0 ? (d.files / maxVal) * chartH : 0;
+                const y = padding.top + chartH - barH;
+
+                // Bar shadow
+                ctx.fillStyle = 'rgba(22, 163, 74, 0.08)';
+                ctx.beginPath();
+                ctx.roundRect(x + 2, y + 2, barW, barH, [6, 6, 0, 0]);
+                ctx.fill();
+
+                // Bar
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.roundRect(x, y, barW, barH, [6, 6, 0, 0]);
+                ctx.fill();
+
+                // Value on top
+                if (d.files > 0) {
+                    ctx.fillStyle = '#16a34a';
+                    ctx.font = 'bold 12px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(d.files, x + barW / 2, y - 6);
+                }
+
+                // X label
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '12px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(d.label, x + barW / 2, h - padding.bottom + 20);
+            });
+        }
+
+        function initAll() {
             initDashClock();
             drawUploadChart();
+            window.removeEventListener('resize', drawUploadChart);
             window.addEventListener('resize', drawUploadChart);
-        });
-    } else {
-        // SPA navigation case: DOM is already ready
-        initDashClock();
-        drawUploadChart();
-        window.removeEventListener('resize', drawUploadChart); // Prevent multiple bindings
-        window.addEventListener('resize', drawUploadChart);
-    }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAll);
+        } else {
+            setTimeout(initAll, 50);
+        }
+    })();
 
     async function deleteMyFolder(folderId) {
         customConfirm(
